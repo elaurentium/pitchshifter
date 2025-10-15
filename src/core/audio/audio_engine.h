@@ -23,32 +23,46 @@
 
 */
 
+#ifndef AUDIO_ENGINE_H
+#define AUDIO_ENGINE_H
 
-#include <random>
+#include <limits>
+#include <sstream>
 
-// Dirctories
-#define LOCAL_DATA_PATH             "data/"
-#define CACHE                       "cache/"
-#define DEMOS                       "demo_songs/"
-#define DOC                         "doc/"
-#define PITCHSHIFTER_KITS           "pitch_kits/"
-#define PITCHSHIFTER_MAPS           "pitch_maps/"
-#define I18N                        "i18n/"
-#define IMG                         "img/"
-#define PATTERNS                    "patterns/"
-#define PLAYLISTS                   "playlists/"
-//#define PLUGINS                     "plugins/"
-#define REPOSITORIES                "repositories/"
-#define SCRIPTS                     "scripts/"
-#define SONGS                       "songs/"
-#define TMP                         "pitchshifter/"
-#define XSD                         "xsd/"
+#include <cassert>
+#include <chrono>
+#include <deque>
+#include <QString>
+#include <queue>
+#include <memory>
+#include <mutex>
+#include <thread>
 
-// Files
-#define CONFIG_FILE                 "config.xml"
-#define SYS_CONFIG_FILE             "pitchshifter.default.conf"
-#define DEFAULT_PRESET_FILE         "default_preset.wav"
+#define AUDIO_ENGINE_DEBUG 0
 
-#define AUTOSAVE                    "autosave"
+typedef int (*audioProcessCallBack)(uint32_t, void *);
 
-#define UNTITLED_SONG               "untitled song"
+namespace PCore {
+    class AudioEngine {
+        public:
+            enum class state {
+                // Not even the constructor has been called
+                Uninitialized = 1,
+                // Not ready, but most pointers are now valid or NULL
+                Initialized = 2,
+                // Drivers are set up, but not ready to process audio.
+                Prepared = 3,
+                // Ready to process audio
+                Ready = 4,
+                // Transport rolling yet. But not ready to process audio
+                CountIn = 5,
+                // Transport is rolling.
+                Playing = 6,
+            };
+
+            static QString StateToQString(const state& state);
+    };
+};
+
+
+#endif // AUDIO_ENGINE_H

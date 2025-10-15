@@ -23,3 +23,22 @@
 
 */
 
+#include "audio_engine.h"
+
+#include <limits>
+#include <sstream>
+
+#include <cassert>
+#include <chrono>
+#include <deque>
+#include <QString>
+#include <queue>
+#include <memory>
+#include <mutex>
+#include <thread>
+
+#define AUDIO_ENGINE_DEBUG 0
+
+namespace PCore {
+    // TODO!
+}
