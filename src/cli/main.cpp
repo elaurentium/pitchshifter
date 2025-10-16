@@ -29,7 +29,7 @@
 #include "core/audio/audio_engine.h"
 
 
-int main(int argc, char *argv[]) {
+int main() {
     Pa_Initialize();
 
     PaStream *stream;
