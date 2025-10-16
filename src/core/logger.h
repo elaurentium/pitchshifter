@@ -23,32 +23,48 @@
 
 */
 
+#ifndef LOGGER_H
+#define LOGGER_H
 
-#include <random>
+#include <stdio.h>
+#include <stdbool.h>
+#include <pthread.h>
 
-// Dirctories
-#define LOCAL_DATA_PATH             "data/"
-#define CACHE                       "cache/"
-#define DEMOS                       "demo_songs/"
-#define DOC                         "doc/"
-#define PITCHSHIFTER_KITS           "pitch_kits/"
-#define PITCHSHIFTER_MAPS           "pitch_maps/"
-#define I18N                        "i18n/"
-#define IMG                         "img/"
-#define PATTERNS                    "patterns/"
-#define PLAYLISTS                   "playlists/"
-//#define PLUGINS                     "plugins/"
-#define REPOSITORIES                "repositories/"
-#define SCRIPTS                     "scripts/"
-#define SONGS                       "songs/"
-#define TMP                         "pitchshifter/"
-#define XSD                         "xsd/"
+// possible log bits
+typedef enum {
+    None = 0x00,
+    Error = 0x01,
+    Warning = 0x02,
+    Info = 0x04,
+    Debug = 0x08,
+    Constructors = 0x10,
+    Locks = 0x20
+} LogLevels;
 
-// Files
-#define CONFIG_FILE                 "config.xml"
-#define SYS_CONFIG_FILE             "pitchshifter.default.conf"
-#define DEFAULT_PRESET_FILE         "default_preset.wav"
+typedef struct Logger {
+    unsigned bitmask;
+    bool running;
+    bool use_stdout;
+    bool log_timestamps;
+    bool log_colors;
+    char log_file_path[256];
 
-#define AUTOSAVE                    "autosave"
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    FILE *file;
+} Logger;
 
-#define UNTITLED_SONG               "untitled song"
+Logger *logger_create(const char *path, bool use_stdout, bool timestamps, bool colors);
+
+Logger *logger_get_instance(void);
+void logger_set_bitmask(unsigned mask);
+unsigned logger_get_bitmask(void);
+bool logger_should_log(Logger *logger, unsigned level);
+void logger_log(Logger *logger, unsigned level,
+                const char *class_name,
+                const char *func_name,
+                const char *msg);
+void logger_flush(Logger *logger);
+void logger_destroy(Logger *logger);
+
+#endif // LOGGER_H
