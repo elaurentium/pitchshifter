@@ -26,43 +26,24 @@
 #ifndef AUDIO_ENGINE_H
 #define AUDIO_ENGINE_H
 
+#include <portaudio.h>
+
 #include <limits>
 #include <sstream>
 
 #include <cassert>
 #include <chrono>
 #include <deque>
-#include <QString>
 #include <queue>
 #include <memory>
 #include <mutex>
 #include <thread>
 
-#define AUDIO_ENGINE_DEBUG 0
-
-typedef int (*audioProcessCallBack)(uint32_t, void *);
-
 namespace PCore {
     class AudioEngine {
         public:
-            enum class state {
-                // Not even the constructor has been called
-                Uninitialized = 1,
-                // Not ready, but most pointers are now valid or NULL
-                Initialized = 2,
-                // Drivers are set up, but not ready to process audio.
-                Prepared = 3,
-                // Ready to process audio
-                Ready = 4,
-                // Transport rolling yet. But not ready to process audio
-                CountIn = 5,
-                // Transport is rolling.
-                Playing = 6,
-            };
-
-            static QString StateToQString(const state& state);
+            static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     };
 };
-
 
 #endif // AUDIO_ENGINE_H

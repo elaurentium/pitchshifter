@@ -23,28 +23,13 @@
 
 */
 
-#include "audio_engine.h"
-
-#include <portaudio.h>
-
-#include <limits>
-#include <sstream>
-
-#include <cassert>
+#include <atomic>
 #include <chrono>
-#include <deque>
-#include <queue>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <cstring>
-
-#define AUDIO_ENGINE_DEBUG 0
+#include <iostream>
+#include <map>
+#include <QDebug>
+#include <unistd.h>
 
 namespace PCore {
-    static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData) {
-        // Copy input -> output directly
-        memcpy(output, input, frameCount * sizeof(float) * 2); // stereo float32
-        return paContinue;
-    }
-}
+    
+};
