@@ -45,3 +45,7 @@
 
 #build
 build
+
+#log
+*.log
+pitchshifter.log
