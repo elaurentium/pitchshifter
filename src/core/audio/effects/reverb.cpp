@@ -23,37 +23,36 @@
 
 */
 
-#include "audio_engine.h"
+#include <algorithm>
 
-#include "audio/audio_engine.h"
-#include "audio/effects/chorus.h"
-#include "audio/effects/delay.h"
-#include "audio/effects/flanger.h"
-#include "audio/effects/pitchshifter.h"
-#include "audio/effects/reverb.h"
-#include <portaudio.h>
-#include <iostream>
-#include <cstring>
-
-#define AUDIO_ENGINE_DEBUG 0
+#include "reverb.h"
 
 namespace PCore {
-    AudioEngine::AudioEngine(int sr) : sampleRate(sr) {
-        effects.push_back(std::make_unique<PCore::Delay>());
-        effects.push_back(std::make_unique<PCore::Flanger>());
-        effects.push_back(std::make_unique<PCore::Reverb>(sampleRate));
-        effects.push_back(std::make_unique<PCore::PitchShifter>(sampleRate));
+    Reverb::Reverb(int sampleRate) : writePos(0), decay(0.5f), mix(0.3f) {
+        dLenght = sampleRate * 0.5f;
+        dBuffer.resize(dLenght * 4, 0.0f);
     }
-    
-    void AudioEngine::processAudio(std::vector<float> &buffer, int sampleRate) {
-        for (auto &effect : effects) {
-            effect->process(buffer, sampleRate);
+
+    void Reverb::process(std::vector<float> &buffer, int sampleRate) {
+        for (size_t i = 0; i < buffer.size(); i++) {
+            float input = buffer[i];
+
+            // Multiply delay taps for reverb effect
+            float delayd1 = dBuffer[(writePos - dLenght) & (dBuffer.size() - 1)];
+            float delayd2 = dBuffer[(writePos - dLenght * 2) & (dBuffer.size() - 1)];
+            float delayd3 = dBuffer[(writePos - dLenght * 3) & (dBuffer.size() - 1)];
+
+            float reverbSignal = (delayd1 + delayd2 * 0.7f + delayd3 * 0.5f) / 3.0f;
+
+            dBuffer[writePos] = input + reverbSignal * decay;
+            writePos = (writePos + 1) % dBuffer.size();
+
+            buffer[i] = input * (1.0f - mix) + reverbSignal * mix;
         }
     }
 
-    void AudioEngine::setEffectParameters(size_t effectIndex, const std::string &param, float value) {
-        if (effectIndex < effects.size()) {
-            effects[effectIndex]->setParameters(param, value);
-        }
+    void Reverb::setParameters(const std::string &param, float value) {
+        if (param == "decay") decay = std::clamp(value, 0.0f, 0.99f);
+        if (param == "mix") mix = std::clamp(value, 0.0f, 1.0f);
     }
-}
+};

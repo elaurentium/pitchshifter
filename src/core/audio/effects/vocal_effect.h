@@ -23,27 +23,17 @@
 
 */
 
-#ifndef AUDIO_ENGINE_H
-#define AUDIO_ENGINE_H
-
-#include <portaudio.h>
+#ifndef VOCAL_EFFECT_H
+#define VOCAL_EFFECT_H
 
 #include <vector>
-#include <memory>
+#include <string>
 
-#include "effects/vocal_effect.h"
-
-namespace PCore {
-    class AudioEngine {
-        private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
-        public:
-            //static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
-    };
+class VocalEffect {
+    public:
+        virtual ~VocalEffect() = default;
+        virtual void process(std::vector<float> &buffer, int sampleRate) = 0;
+        virtual void setParameters(const std::string &param, float value) = 0;
 };
 
-#endif // AUDIO_ENGINE_H
+#endif // VOCAL_EFFECT_H

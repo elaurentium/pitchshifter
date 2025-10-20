@@ -23,27 +23,37 @@
 
 */
 
-#ifndef AUDIO_ENGINE_H
-#define AUDIO_ENGINE_H
-
-#include <portaudio.h>
-
+#include <iostream>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include <memory>
 
-#include "effects/vocal_effect.h"
+#include "delay.h"
 
 namespace PCore {
-    class AudioEngine {
-        private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
-        public:
-            //static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
-    };
-};
+    Delay::Delay(int sampleRate) : writePos(0), feedback(0.5f), mix(0.3f) {
+        int maxDelay = sampleRate * 2; // 2 seconds max delay
+        dBuffer.resize(maxDelay, 0.0f);
+        dTime = sampleRate * 0.375f; // 375ms default
+    }
 
-#endif // AUDIO_ENGINE_H
+    void Delay::process(std::vector<float> &buffer, int sampleRate) {
+        for (size_t i = 0; i < buffer.size(); i++) {
+            float input = buffer[i];
+            int readPos = (writePos - dTime + dBuffer.size()) % dBuffer.size();
+            float delayed = dBuffer[readPos];
+
+            dBuffer[writePos] = input + delayed * feedback;
+            writePos = (writePos + 1) % dBuffer.size();
+
+            buffer[i] = input * (1.0f - mix) + delayed * mix;
+        }
+    }
+
+    void Delay::setParameters(const std::string &param, float value) {
+        if (param == "time") dTime = static_cast<int>(value);
+        if (param == "feedback") feedback = std::clamp(value, 0.0f, 0.95f);
+        if (param == "mix") mix = std::clamp(value, 0.0f, 1.0f);
+    }
+};

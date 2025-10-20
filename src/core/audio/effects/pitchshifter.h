@@ -23,27 +23,26 @@
 
 */
 
-#ifndef AUDIO_ENGINE_H
-#define AUDIO_ENGINE_H
+#ifndef PITCHSHIFTER_H
+#define PITCHSHIFTER_H
 
-#include <portaudio.h>
-
-#include <vector>
-#include <memory>
-
-#include "effects/vocal_effect.h"
+#include "vocal_effect.h"
 
 namespace PCore {
-    class AudioEngine {
+    class PitchShifter {
         private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
-        public:
-            //static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
-    };
-};
+            std::vector<float> buffer1, buffer2;
+            int writePos;
+            float readPos1, readPos2;
+            float pitchRatio;
+            int bufferSize;
+            float crossfade;
 
-#endif // AUDIO_ENGINE_H
+        public:
+            PitchShifter(int sampleRate);
+            void process(std::vector<float> &buffer, int sampleRate);
+            void setParameters(const std::string &param, float value);
+    };
+}
+
+#endif // PITCHSHIFTER_H

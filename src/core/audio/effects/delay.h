@@ -23,27 +23,31 @@
 
 */
 
-#ifndef AUDIO_ENGINE_H
-#define AUDIO_ENGINE_H
-
-#include <portaudio.h>
+#ifndef DELAY_H
+#define DELAY_H
 
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include <memory>
 
-#include "effects/vocal_effect.h"
+#include "vocal_effect.h"
+
 
 namespace PCore {
-    class AudioEngine {
+    class Delay : public VocalEffect {
         private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
+            std::vector<float> dBuffer;
+            int dTime;
+            int writePos;
+            float feedback;
+            float mix;
+            
         public:
-            //static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
+            Delay(int sampleRate);
+            void process(std::vector<float> &buffer, int sampleRate);
+            void setParameters(const std::string &param, float value);
     };
-};
+}
 
-#endif // AUDIO_ENGINE_H
+#endif // DELAY_H

@@ -22,24 +22,48 @@
     SOFTWARE.
 
 */
-
 #include <iostream>
 #include <portaudio.h>
+#include <cmath>
 
 #include "core/audio/audio_engine.h"
 
+#define SAMPLE_RATE 44100
+#define BUFFER_SIZE 512
+
 
 int main() {
-    Pa_Initialize();
+    //Pa_Initialize();
 
-    PaStream *stream;
+    //PaStream *stream;
 
-    Pa_OpenDefaultStream(&stream, 2, 2, paFloat32, 4800, 256, &PCore::AudioEngine::audioCallBack, nullptr);
+    //Pa_OpenDefaultStream(&stream, 2, 2, paFloat32, 4800, 256, &PCore::AudioEngine::audioCallBack, nullptr);
 
-    Pa_StartStream(stream);
-    getchar(); // Keep running until key pressed
-    Pa_StopStream(stream);
-    Pa_CloseStream(stream);
-    Pa_Terminate();
+    //Pa_StartStream(stream);
+    //getchar(); // Keep running until key pressed
+    //Pa_StopStream(stream);
+    //Pa_CloseStream(stream);
+    //Pa_Terminate();
+
+    PCore::AudioEngine vocal300(SAMPLE_RATE);
+
+    // Create a test buffer with a simple sine wave
+    std::vector<float> audioBuffer(BUFFER_SIZE);
+    for (int i = 0; i < BUFFER_SIZE; ++i) {
+        audioBuffer[i] = std::sin(2.0f * M_PI * 440.0f * i / SAMPLE_RATE) * 0.5f;
+    }
+    
+    // Configure effects
+    vocal300.setEffectParameters(0, "threshold", 0.6f); // Compressor
+    vocal300.setEffectParameters(1, "mid", 1.2f);       // EQ
+    vocal300.setEffectParameters(6, "time", SAMPLE_RATE * 0.375f); // Delay
+    vocal300.setEffectParameters(7, "mix", 0.3f);       // Reverb
+    
+    // Process audio
+    vocal300.processAudio(audioBuffer);
+    
+    std::cout << "DigiTech Vocal 300 simulation processed " 
+              << BUFFER_SIZE << " samples" << std::endl;
+
     return 0;
 }

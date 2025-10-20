@@ -23,27 +23,33 @@
 
 */
 
-#ifndef AUDIO_ENGINE_H
-#define AUDIO_ENGINE_H
+#ifndef FLANGER_H
+#define FLANGER_H
 
-#include <portaudio.h>
-
+#include <iostream>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include <memory>
 
-#include "effects/vocal_effect.h"
+#include "vocal_effect.h"
 
-namespace PCore {
-    class AudioEngine {
+namespace PCore { 
+    class Flanger : public VocalEffect {
         private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
-        public:
-            //static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
-    };
-};
+            std::vector<float> dBuffer;
+            int writePos;
+            float lfoPhase;
+            float lfoRate;
+            float depth;
+            float feedback;
+            float mix;
 
-#endif // AUDIO_ENGINE_H
+        public:
+            Flanger(int sampleRate);
+            void process(std::vector<float> &buffer, int sampleRate);
+            void setParameters(const std::string &param, float value);
+    };
+}
+
+#endif // FLANGER_H
