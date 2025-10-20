@@ -29,7 +29,7 @@
 #include "vocal_effect.h"
 
 namespace PCore {
-    class PitchShifter {
+    class PitchShifter : public VocalEffect {
         private:
             std::vector<float> buffer1, buffer2;
             int writePos;

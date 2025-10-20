@@ -23,26 +23,26 @@
 
 */
 
-#include "audio_engine.h"
-
-#include "audio/audio_engine.h"
-#include "audio/effects/chorus.h"
-#include "audio/effects/delay.h"
-#include "audio/effects/flanger.h"
-#include "audio/effects/pitchshifter.h"
-#include "audio/effects/reverb.h"
 #include <portaudio.h>
 #include <iostream>
 #include <cstring>
+
+#include "audio_engine.h"
+#include "effects/delay.h"
+#include "effects/chorus.h"
+#include "effects/flanger.h"
+#include "effects/reverb.h"
+#include "effects/pitchshifter.h"
 
 #define AUDIO_ENGINE_DEBUG 0
 
 namespace PCore {
     AudioEngine::AudioEngine(int sr) : sampleRate(sr) {
-        effects.push_back(std::make_unique<PCore::Delay>());
-        effects.push_back(std::make_unique<PCore::Flanger>());
-        effects.push_back(std::make_unique<PCore::Reverb>(sampleRate));
-        effects.push_back(std::make_unique<PCore::PitchShifter>(sampleRate));
+        effects.push_back(std::make_unique<PCore::Delay>(sr));
+        effects.push_back(std::make_unique<PCore::Chorus>(sr));
+        effects.push_back(std::make_unique<PCore::Flanger>(sr));
+        effects.push_back(std::make_unique<PCore::Reverb>(sr));
+        effects.push_back(std::make_unique<PCore::PitchShifter>(sr));
     }
     
     void AudioEngine::processAudio(std::vector<float> &buffer, int sampleRate) {
@@ -56,4 +56,26 @@ namespace PCore {
             effects[effectIndex]->setParameters(param, value);
         }
     }
+
+    int AudioEngine::audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData) {
+        AudioEngine *engine = static_cast<AudioEngine *>(userData);
+
+        if (!engine) return paAbort;
+
+        const float *in = static_cast<const float*>(input);
+        float *out = static_cast<float*>(output);
+
+        std::vector<float> buffer(frameCount);
+        if (in) {
+            std::copy(in, in + frameCount, buffer.begin());
+        } else {
+            std::fill(buffer.begin(), buffer.end(), 0.0f);
+        }
+
+        engine->processAudio(buffer, engine->sampleRate);
+
+        std::copy(buffer.begin(), buffer.end(), out);
+
+        return paContinue;
+    } 
 }

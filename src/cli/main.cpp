@@ -27,25 +27,31 @@
 #include <cmath>
 
 #include "core/audio/audio_engine.h"
+#include "core/logger.h"
 
 #define SAMPLE_RATE 44100
 #define BUFFER_SIZE 512
 
-
 int main() {
-    //Pa_Initialize();
+    // Initialize logger
+    Logger *logger = logger_create("pitchshifter.log", true, true, false);
 
-    //PaStream *stream;
+    // Set logger level
+    logger_set_bitmask(Error | Warning | Info | Debug);
 
-    //Pa_OpenDefaultStream(&stream, 2, 2, paFloat32, 4800, 256, &PCore::AudioEngine::audioCallBack, nullptr);
+    // Initial log
+    logger_log(logger, Debug, "Main", "main", "Starting application...");
 
-    //Pa_StartStream(stream);
-    //getchar(); // Keep running until key pressed
-    //Pa_StopStream(stream);
-    //Pa_CloseStream(stream);
-    //Pa_Terminate();
+    PaError err = Pa_Initialize();
+    if (err != paNoError) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "PortAudio init error: %s", Pa_GetErrorText(err));
+        logger_log(logger, Error, "Main", "main", msg);
+        logger_destroy(logger);
+        return -1;
+    }
 
-    PCore::AudioEngine vocal300(SAMPLE_RATE);
+    PCore::AudioEngine engine(SAMPLE_RATE);
 
     // Create a test buffer with a simple sine wave
     std::vector<float> audioBuffer(BUFFER_SIZE);
@@ -54,16 +60,45 @@ int main() {
     }
     
     // Configure effects
-    vocal300.setEffectParameters(0, "threshold", 0.6f); // Compressor
-    vocal300.setEffectParameters(1, "mid", 1.2f);       // EQ
-    vocal300.setEffectParameters(6, "time", SAMPLE_RATE * 0.375f); // Delay
-    vocal300.setEffectParameters(7, "mix", 0.3f);       // Reverb
+    engine.setEffectParameters(0, "threshold", 0.6f); // Compressor
+    engine.setEffectParameters(1, "mid", 1.2f);       // EQ
+    engine.setEffectParameters(6, "time", SAMPLE_RATE * 0.375f); // Delay
+    engine.setEffectParameters(7, "mix", 0.3f);       // Reverb
     
     // Process audio
-    vocal300.processAudio(audioBuffer);
-    
-    std::cout << "DigiTech Vocal 300 simulation processed " 
-              << BUFFER_SIZE << " samples" << std::endl;
+    engine.processAudio(audioBuffer, SAMPLE_RATE);
+
+    PaStream *stream;
+    err = Pa_OpenDefaultStream(
+        &stream,
+        1, 1,
+        paFloat32,
+        SAMPLE_RATE,
+        BUFFER_SIZE,
+        &PCore::AudioEngine::audioCallBack,
+        &engine
+    );
+
+    if (err != paNoError) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "Failed to open stream: %s", Pa_GetErrorText(err));
+        logger_log(logger, Error, "Main", "main", msg);
+        logger_destroy(logger);
+        return -1;
+    } 
+
+    err = Pa_StartStream(stream);
+    if (err != paNoError) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "Erro to initialize stream: %s", Pa_GetErrorText(err));
+        logger_log(logger, Error, "Main", "main", msg);
+        Pa_CloseStream(stream);
+        Pa_Terminate();
+        logger_destroy(logger);
+        return -1;
+    }
+
+    logger_log(logger, Info, "Main", "main", "Begining simulation...");
 
     return 0;
 }

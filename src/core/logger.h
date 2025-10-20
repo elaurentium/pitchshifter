@@ -30,6 +30,10 @@
 #include <stdbool.h>
 #include <pthread.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // possible log bits
 typedef enum {
     None = 0x00,
@@ -46,7 +50,7 @@ typedef struct Logger {
     bool running;
     bool use_stdout;
     bool log_timestamps;
-    bool log_colors;
+    bool log_colors; // Support colors
     char log_file_path[256];
 
     pthread_mutex_t mutex;
@@ -66,5 +70,9 @@ void logger_log(Logger *logger, unsigned level,
                 const char *msg);
 void logger_flush(Logger *logger);
 void logger_destroy(Logger *logger);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LOGGER_H

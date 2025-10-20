@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PitchShifter VERSION 0.0.1 DESCRIPTION "An vocal 300 like" LANGUAGES CXX)
+project(PitchShifter VERSION 0.0.1 DESCRIPTION "An vocal 300 like" LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,8 +14,11 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(CORE_DIR ${SRC_DIR}/core)
 set(CLI_DIR ${SRC_DIR}/cli)
 
+## Module
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 ## Fonts
-file(GLOB_RECURSE CORE_SOURCES ${CORE_DIR}/*.cpp)
+file(GLOB_RECURSE CORE_SOURCES ${CORE_DIR}/*.cpp ${CORE_DIR}/*.c)
 set(SOURCES
     ${CLI_DIR}/main.cpp
     ${CORE_SOURCES}

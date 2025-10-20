@@ -34,20 +34,21 @@
 
 #include "vocal_effect.h"
 
-class Chorus : public VocalEffect {
-    private:
-        std::vector<float> dBuffer;
-        int writePos;
-        float lfoPhase;
-        float lfoRate;
-        float depth;
-        float mix;
-        int baseDelay;
+namespace PCore {
+    class Chorus : public VocalEffect {
+        private:
+            std::vector<float> dBuffer;
+            int writePos;
+            float lfoPhase;
+            float lfoRate;
+            float depth;
+            float mix;
+            int baseDelay;
 
-    public:
-        Chorus(int sampleRate);
-        void process(std::vector<float> &buffer, int sampleRate);
-        void setParameters(const std::string &param, float value);
-};
-
+        public:
+            Chorus(int sampleRate);
+            void process(std::vector<float> &buffer, int sampleRate);
+            void setParameters(const std::string &param, float value);
+    };
+}
 #endif // CHORUS_H
