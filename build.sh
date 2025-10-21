@@ -26,6 +26,10 @@
 
 set -e
 
+sudo apt update -y && sudo apt upgrade -y
+sudo apt install pulseaudio -y
+pulseaudio --start
+
 mkdir build && cd build
 cmake ..
 cmake --build . -j$(nproc)
