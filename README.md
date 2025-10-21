@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="docs/digitech-vocal300.png" height="180px" style="height:180px; background-color: transparent;" alt="vocal300" title="vocal300">
+  <img src="docs/static/digitech-vocal300.png" height="180px" style="height:180px; background-color: transparent;" alt="vocal300" title="vocal300">
   <br>
   PitchShifter
 </h1>
