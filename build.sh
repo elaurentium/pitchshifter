@@ -26,10 +26,6 @@
 
 set -e
 
-sudo apt update -y && sudo apt upgrade -y
-sudo apt install pulseaudio -y
-pulseaudio --start
-
 mkdir build && cd build
 cmake ..
 cmake --build . -j$(nproc)
@@ -39,29 +35,30 @@ UNAME=$(uname -s 2>/dev/null || echo Unknown)
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 install_linux_deb() {
-    sudo apt update
-    sudo apt install -y alsa-utils
-    sudo apt install -y portaudio19-dev
+  sudo apt update
+  sudo apt install -y alsa-utils
+  sudo apt install -y portaudio19-dev
+  sudo apt install pulseaudio -y
 }
 
 install_linux_fedora() {
-    sudo dnf install -y alsa-utils
-    sudo dnf install -y portaudio-devel
+  sudo dnf install -y alsa-utils
+  sudo dnf install -y pulseaudio
 }
 
 install_linux_arch() {
-    sudo pacman -Sy --noconfirm alsa-utils
-    sudo pacman -Sy --noconfirm portaudio
+  sudo pacman -Sy --noconfirm alsa-utils
+  sudo pacman -Sy --noconfirm portaudio
 }
 
 install_linux_opensuse() {
-    sudo zypper install -y alsa-utils
-    sudo zypper install -y portaudio-devel
+  sudo zypper install -y alsa-utils
+  sudo zypper install -y portaudio
 }
 
 install_darwin() {
-    brew install portaudio
-    brew install switchaudio-osx
+  brew install portaudio
+  brew install switchaudio-osx
 }
 
 detect_pkg_manager_and_install() {

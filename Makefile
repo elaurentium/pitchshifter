@@ -1,4 +1,5 @@
 run:
+	pulseaudio --start
 	./build/bin/PitchShifter
 
 build:

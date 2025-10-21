@@ -21,6 +21,12 @@
 # NOT IMPLEMENTED YET
 ```
 
+## How to contributing
+Pull request are ever welcome. For major changes, please open an issue to discuss your proposal and what you'd like to change.
+
+- To keep updated with releases, consider starring the project.
+- Check the [contributing guidelines]().
+
 ## Overview
 
 The Digitech Vocal 300 is a vocal multi-effects processor in a pedalboard format. It’s designed for performers who want to trigger and control multiple vocal effects live with their feet, keeping their hands free to sing/play. It combines essential vocal pre-processing (gate, compressor, EQ) with creative effects (reverb, delay, modulation, pitch) and includes an expression pedal for real-time parameter control.
@@ -83,3 +89,7 @@ Use the official power supply or an exact-spec equivalent.
 Balanced cabling where applicable helps reduce noise.
 Keep the unit clean and dry; avoid liquids and drops.
 Document your presets (names/settings) so you can quickly recreate them if needed.
+
+
+## License
+This software is licensed under the [MIT](LICENSE) © [Evandro L. Limeira](https://github.com/elaurentium)
