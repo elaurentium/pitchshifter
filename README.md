@@ -1,9 +1,29 @@
-# PitchShifter
-A virtual pedal based on the legendary digitech vocal 300.
+<h1 align="center">
+  <img src="docs/digitech-vocal300.png" height="180px" style="height:180px; background-color: transparent;" alt="vocal300" title="vocal300">
+  <br>
+  PitchShifter
+</h1>
+
+<div align="center">
+
+[![License: MIT](https://img.shields.io/github/license/elaurentium/pitchshifter?color=yellow)](https://github.com/elaurentium/pitchshifter/blob/main/LICENSE)
+[![Version](https://img.shields.io/github/v/release/elaurentium/pitchshifter?color=blue)](https://github.com/elaurentium/pitchshifter/releases)
+[![Platform](https://img.shields.io/badge/platforms-%20Linux%20|%20macOS-green.svg?color=lightgrey)](https://github.com/elaurentium/pitchshifter/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/elaurentium/pitchshifter/ci.yaml?branch=main)](https://github.com/elaurentium/pitchshifter/actions/workflows/ci.yaml)
+
+</div>
+
+**PitchShifter** is a virtual pedal based on the legendary digitech vocal 300.
+
+## Installation
+
+```bash
+# NOT IMPLEMENTED YET
+```
 
 ## Overview
-The Digitech Vocal 300 is a vocal multi-effects processor in a pedalboard format. It’s designed for performers who want to trigger and control multiple vocal effects live with their feet, keeping their hands free to sing/play. It combines essential vocal pre-processing (gate, compressor, EQ) with creative effects (reverb, delay, modulation, pitch) and includes an expression pedal for real-time parameter control.
 
+The Digitech Vocal 300 is a vocal multi-effects processor in a pedalboard format. It’s designed for performers who want to trigger and control multiple vocal effects live with their feet, keeping their hands free to sing/play. It combines essential vocal pre-processing (gate, compressor, EQ) with creative effects (reverb, delay, modulation, pitch) and includes an expression pedal for real-time parameter control.
 
 Key Features
 Multiple vocal effects in a single unit:
