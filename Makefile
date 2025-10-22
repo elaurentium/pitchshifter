@@ -1,5 +1,5 @@
 run:
-	@if [ "$(shell uname)" = "Linux" ]; then \
+	@if [ "$(shell uname)" == "Linux" ]; then \
 		pulseaudio --start; \
 	fi
 	./build/bin/PitchShifter

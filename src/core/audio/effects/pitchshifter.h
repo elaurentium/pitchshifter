@@ -31,17 +31,17 @@
 namespace PCore {
     class PitchShifter : public VocalEffect {
         private:
-            std::vector<float> buffer1, buffer2;
-            int writePos;
+            std::vector<float> buffer1, buffer2, window;
+            int writePos, bufferSize;
             float readPos1, readPos2;
-            float pitchRatio;
-            int bufferSize;
-            float crossfade;
+            float pitchRatio, crossfade;
+            float formantShift, mix;
 
         public:
             PitchShifter(int sampleRate);
             void process(std::vector<float> &buffer, int sampleRate);
             void setParameters(const std::string &param, float value);
+            float getLatency() const;
     };
 }
 

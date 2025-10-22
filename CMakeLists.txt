@@ -26,6 +26,38 @@ set(CLI_DIR ${SRC_DIR}/cli)
 ## Module
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+set(VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(DISPLAY_VERSION "${PROJECT_VERSION}")
+
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_REVISION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_REVISION)
+    set(GIT_REVISION "unknown")
+endif()
+
+set(MAX_BUFFER_SIZE 4096)
+set(MAX_FX 16)
+
+set(HAVE_PORTAUDIO 1)
+
+configure_file(
+    ${CORE_DIR}/config.h.in
+    ${CORE_DIR}/config.h
+    @ONLY
+)
+
+# Disponibilizar o diretório com o header gerado
+include_directories(${CORE_DIR})
+
+#############################################################################
+
 ## Fonts
 file(GLOB_RECURSE CORE_SOURCES ${CORE_DIR}/*.cpp ${CORE_DIR}/*.c)
 set(SOURCES
@@ -48,10 +80,14 @@ pkg_check_modules(PORTAUDIO portaudio-2.0)
 
 if (PORTAUDIO_FOUND)
     message(STATUS "Using PortAudio by pkg-config")
+    set(HAVE_PORTAUDIO 1)
 else()
     message(WARNING "pkg-config not found PortAudio — trying manually...")
     find_path(PORTAUDIO_INCLUDE_DIR portaudio.h)
     find_library(PORTAUDIO_LIBRARY NAMES portaudio)
+    if(PORTAUDIO_INCLUDE_DIR AND PORTAUDIO_LIBRARY)
+        set(HAVE_PORTAUDIO 1)
+    endif()
 endif()
 
 if (NOT PORTAUDIO_INCLUDE_DIR AND NOT PORTAUDIO_INCLUDE_DIRS)
@@ -66,6 +102,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${SRC_DIR}
+        ${CORE_DIR}  # ← config.h gen
         ${PORTAUDIO_INCLUDE_DIRS}
         ${PORTAUDIO_INCLUDE_DIR}
 )
@@ -88,4 +125,8 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY ${SRC_DIR}/core/audio/
     DESTINATION include/pitchshifter/core/audio
     FILES_MATCHING PATTERN "*.h"
+)
+
+install(FILES ${CORE_DIR}/config.h
+    DESTINATION include/pitchshifter
 )

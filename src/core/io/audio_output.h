@@ -26,6 +26,20 @@
 #ifndef AUDIO_OUTPUT
 #define AUDIO_OUTPUT
 
+#include "core/config.h"
+#include "core/object.h"
+
+namespace PCore {
+    typedef int (*audioProcessCallBack) (uint32_t, void *);
+
+    class AudioOutput : public PCore::Object<AudioOutput> {
+        public:
+            AudioOutput() = default;
+            virtual ~AudioOutput() { }
+
+            virtual int init(unsigned nBufferSize) = 0;
+    };
+};
 
 
 #endif // AUDIO_OUTPUT

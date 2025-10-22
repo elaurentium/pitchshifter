@@ -27,5 +27,12 @@
 #define ALSA_AUDIO_DRIVER_H
 
 
+#include <inttypes.h>
+
+
+namespace PCore {
+
+};
+
 
 #endif // ALSA_AUDIO_DRIVER_H

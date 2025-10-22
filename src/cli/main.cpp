@@ -187,9 +187,15 @@ int main() {
     PCore::AudioEngine engine(SAMPLE_RATE);
 
     // Configure effects
-    engine.setEffectParameters(0, "mix", 0.0f);
-    engine.setEffectParameters(1, "depth", 0.0f);
-	engine.setEffectParameters(2, "pitch", -3000.0f);
+    engine.setEffectParameters(0, "mix", 1.0f);
+    engine.setEffectParameters(1, "depth", 1.0f);
+
+    /****************************************************
+        PitchShifter
+    *****************************************************/
+	engine.setEffectParameters(2, "pitch", -1.0f);
+    engine.setEffectParameters(3, "formant", -2.0f);
+    engine.setEffectParameters(4, "mix", 0.7f);
 
     logger_log(logger, Info, "Main", "main", "Effects configured successfully.");
 

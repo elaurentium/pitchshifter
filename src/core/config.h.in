@@ -1,0 +1,30 @@
+#ifndef PITCH_CONFIG_H
+#define PITCH_CONFIG_H
+
+#include <string>
+
+#define APP_PREFIX "@CMAKE_INSTALL_PREFIX@"
+#define SOURCE_DIR "@CMAKE_SOURCE_DIR@"
+#define BUILD_DIR "@CMAKE_BINARY_DIR@"
+
+#define DSPENGINE_VERSION_MAJOR 1
+#define DSPENGINE_VERSION_MINOR 0
+#define DSPENGINE_VERSION_PATCH 0
+#define DSPENGINE_VERSION "1.0.0"
+
+#define DSPENGINE_GIT_REVISION "@GIT_REVISION@"
+
+#define MAX_BUFFER_SIZE 4096
+#define MAX_FX 8
+
+#cmakedefine HAVE_LIBSNDFILE
+#cmakedefine HAVE_RUBBERBAND
+#cmakedefine HAVE_JACK
+#cmakedefine HAVE_PORTAUDIO
+#cmakedefine HAVE_ALSA
+
+#ifndef DSPENGINE_HAVE_DEBUG
+#cmakedefine DSPENGINE_HAVE_DEBUG
+#endif
+
+#endif // PITCH_CONFIG_H
