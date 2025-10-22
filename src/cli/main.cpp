@@ -34,7 +34,7 @@ extern "C" {
 }
 
 #define SAMPLE_RATE 44100
-#define FRAMES_PER_BUFFER 512
+#define FRAMES_PER_BUFFER 2048
 
 // Helper function to open stream with automatic fallback
 static PaError openStreamWithFallback(PaStream** stream, PCore::AudioEngine* engine, Logger* logger) {
@@ -81,6 +81,8 @@ static PaError openStreamWithFallback(PaStream** stream, PCore::AudioEngine* eng
 
     int inputDev = paNoDevice;
     int outputDev = paNoDevice;
+    int pulseInputDev = paNoDevice;
+    int pulseOutputDev = paNoDevice;
 
     // List and find valid devices
     for (int i = 0; i < numDevices; ++i) {
@@ -121,14 +123,14 @@ static PaError openStreamWithFallback(PaStream** stream, PCore::AudioEngine* eng
     inputParams.device = inputDev;
     inputParams.channelCount = 1;
     inputParams.sampleFormat = paFloat32;
-    inputParams.suggestedLatency = inInfo->defaultLowInputLatency;
+    inputParams.suggestedLatency = inInfo->defaultHighInputLatency;
     inputParams.hostApiSpecificStreamInfo = nullptr;
 
     PaStreamParameters outputParams;
     outputParams.device = outputDev;
     outputParams.channelCount = 1;
     outputParams.sampleFormat = paFloat32;
-    outputParams.suggestedLatency = outInfo->defaultLowOutputLatency;
+    outputParams.suggestedLatency = outInfo->defaultHighOutputLatency;
     outputParams.hostApiSpecificStreamInfo = nullptr;
 
     snprintf(msg, sizeof(msg),
@@ -185,8 +187,8 @@ int main() {
     PCore::AudioEngine engine(SAMPLE_RATE);
 
     // Configure effects (optional)
-    engine.setEffectParameters(0, "mix", 0.4f);
-    engine.setEffectParameters(1, "depth", 0.2f);
+    //engine.setEffectParameters(0, "mix", 0.8f);
+    //engine.setEffectParameters(1, "depth", 0.2f);
     logger_log(logger, Info, "Main", "main", "Effects configured successfully.");
 
     // Open stream with automatic fallback
