@@ -27,6 +27,7 @@
 
 #include "pitchshifter.h"
 
+// TODO: learn how to performated pitchshifting cuz sounds weird asf
 namespace PCore {
     PitchShifter::PitchShifter(int sampleRate) : writePos(0), readPos1(0), readPos2(0),
                                              pitchRatio(1.0f), crossfade(0.0f) {
