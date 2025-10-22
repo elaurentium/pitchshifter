@@ -37,7 +37,7 @@ extern "C" {
 #define FRAMES_PER_BUFFER 2048
 
 // Helper function to open stream with automatic fallback
-static PaError openStreamWithFallback(PaStream** stream, PCore::AudioEngine* engine, Logger* logger) {
+static PaError openStreamWithFallback(PaStream **stream, PCore::AudioEngine *engine, Logger *logger) {
     // 1) Try to open default stream first
     PaError err = Pa_OpenDefaultStream(
         stream,
