@@ -186,9 +186,11 @@ int main() {
     // Create audio engine
     PCore::AudioEngine engine(SAMPLE_RATE);
 
-    // Configure effects (optional)
-    //engine.setEffectParameters(0, "mix", 0.8f);
-    //engine.setEffectParameters(1, "depth", 0.2f);
+    // Configure effects
+    engine.setEffectParameters(0, "mix", 0.0f);
+    engine.setEffectParameters(1, "depth", 0.0f);
+	engine.setEffectParameters(2, "pitch", -3000.0f);
+
     logger_log(logger, Info, "Main", "main", "Effects configured successfully.");
 
     // Open stream with automatic fallback

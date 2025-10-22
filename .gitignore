@@ -40,8 +40,9 @@
 # debug information files
 *.dwo
 
-#.vscode
+#hidden
 .vscode
+.cache
 
 #build
 build
