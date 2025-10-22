@@ -34,7 +34,7 @@ extern "C" {
 }
 
 #define SAMPLE_RATE 44100
-#define FRAMES_PER_BUFFER 512
+#define FRAMES_PER_BUFFER 2048
 
 // Helper function to open stream with automatic fallback
 static PaError openStreamWithFallback(PaStream** stream, PCore::AudioEngine* engine, Logger* logger) {
@@ -185,8 +185,10 @@ int main() {
     PCore::AudioEngine engine(SAMPLE_RATE);
 
     // Configure effects (optional)
-    engine.setEffectParameters(0, "mix", 0.4f);
-    engine.setEffectParameters(1, "depth", 0.2f);
+    engine.setEffectParameters(0, "mix", 0.0f);
+    engine.setEffectParameters(1, "depth", 0.0f);
+	engine.setEffectParameters(2, "pitch", 10.5f);
+	
     logger_log(logger, Info, "Main", "main", "Effects configured successfully.");
 
     // Open stream with automatic fallback

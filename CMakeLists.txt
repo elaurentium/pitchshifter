@@ -5,6 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Force Homebrew prefix for Apple Silicon
+if(APPLE)
+    set(HOMEBREW_PREFIX "/opt/homebrew")
+    include_directories(${HOMEBREW_PREFIX}/include)
+    link_directories(${HOMEBREW_PREFIX}/lib)
+endif()
+
 set(CMAKE_OSX_DEPLOYMENT_TARGET "42.0")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
