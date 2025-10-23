@@ -44,7 +44,6 @@ namespace PCore {
             float feedback_ = 0.35f;
             float mix_ = 0.3f;
 
-            std::vector<float> dBuffer_;
             
         public:
             explicit Delay(int sampleRate);

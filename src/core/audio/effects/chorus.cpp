@@ -23,48 +23,102 @@
 
 */
 
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <memory>
+#include <numeric>
 
 #include "chorus.h"
 
 namespace PCore {
-    Chorus::Chorus(int sampleRate) : writePos(0), lfoPhase(0.0f),
-                            lfoRate(2.0f), depth(0.003f), mix(0.5f) {
-        dBuffer.resize(sampleRate * 0.5f, 0.0f); // 50ms buffer
-        baseDelay = sampleRate * 0.01f; // 10ms base delay
+    Chorus::Chorus(int sampleRate) : sampleRate_(sampleRate) {}
+
+    void Chorus::prepare(int sr, int block, int inCh, int outCh) {
+        sampleRate_ = sr;
+
+        const size_t baseSmp = msToSamples(static_cast<float>(baseDelayMs_));
+        const size_t depthSmp = msToSamples(depthMs_);
+        const size_t total  = std::max<size_t>(baseSmp + depthSmp + 8, 256);
+
+        dBuffer_.assign(total, 0.0f);
+        writePos_ = 0;
+        lfoPhase_ = 0.0f;
     }
 
-    void Chorus::process(std::vector<float> &buffer, int sampleRate) {
-        float lfoInc = (2.0f * M_PI * lfoRate) / sampleRate;
+    void Chorus::process(const float* const *in, float* const *out, unsigned long frames) {
+        if (!out || !out[0]) return;
 
-        for (size_t i = 0; i < buffer.size(); i++) {
-            float input = buffer[i];
+        const float* x = (in && in[0]) ? in[0] : nullptr;
+        float* y = out[0];
 
-            // LFO modulation
-            float lfo = std::sin(lfoPhase);
-            lfoPhase += lfoInc;
-            
-            if (lfoPhase > 2.0f * M_PI) lfoPhase -= 2.0f * M_PI;
-
-            // Chorus effect -> modulate delay time
-            float modDelay = baseDelay + lfo * depth * sampleRate;
-            int readPos = static_cast<int>(writePos - modDelay + dBuffer.size()) % dBuffer.size();
-
-            float delayed = dBuffer[readPos];
-            dBuffer[writePos] = input;
-            writePos = (writePos + 1) % dBuffer.size();
-
-            buffer[i] = input * (1.0f - mix) + (input + delayed) * 0.5f * mix;
+        if (!x) {
+            std::fill_n(y, frames, 0.0f);
+            return;
         }
+
+        const size_t N = dBuffer_.size();
+        if (N == 0) { std::copy(x, x + frames, y); return; }
+
+        const float twoPi = M_PI * M_PI;
+        const float phaseInc = twoPi * (lfoRate_ / static_cast<float>(sampleRate_));
+
+        const float baseSmpF  = static_cast<float>(msToSamples(static_cast<float>(baseDelayMs_)));
+        const float depthSmpF = static_cast<float>(msToSamples(depthMs_));
+
+        size_t wp = writePos_;
+        float phase = lfoPhase_;
+
+        for (unsigned long i = 0; i < frames; ++i) {
+            float lfo = 0.5f * (1.0f + std::sin(phase));
+            float delaySmpF = baseSmpF + depthSmpF * lfo;
+
+            float rpF = static_cast<float>(wp) - delaySmpF;
+            while (rpF < 0.0f) rpF += static_cast<float>(N);
+
+            size_t rp0 = static_cast<size_t>(rpF);
+            size_t rp1 = (rp0 + 1) % N;
+            float frac = rpF - static_cast<float>(rp0);
+
+            float d0 = dBuffer_[rp0];
+            float d1 = dBuffer_[rp1];
+            float delayed = d0 + (d1 - d0) * frac;
+
+            dBuffer_[wp] = x[i] + 0.02f * delayed;
+
+            float outSmp = (1.0f - mix_) * x[i] + mix_ * delayed;
+            y[i] = outSmp;
+
+            wp = (wp + 1) % N;
+            phase += phaseInc;
+            if (phase >= twoPi) phase -= twoPi;
+        }
+
+        writePos_ = wp;
+        lfoPhase_ = phase;
+
+        // if have more out channels you can duplicate y to out[1..]
     }
 
-    void Chorus::setParameters(const std::string &param, float value) {
-        if (param == "rate") lfoRate = std::clamp(value, 0.1f, 10.0f);
-        else if (param == "depth") depth = std::clamp(value, 0.0f, 0.01f);
-        else if (param == "mix") mix = std::clamp(value, 0.0f, 1.0f);
+    void Chorus::setParameters(const std::string& param, float value) {
+        if (param == "lfo_rate_hz") {
+            lfoRate_ = std::clamp(value, 0.05f, 5.0f);
+        } else if (param == "depth_ms") {
+            depthMs_ = std::clamp(value, 1.0f, 25.0f);
+            const size_t baseSmp  = msToSamples(static_cast<float>(baseDelayMs_));
+            const size_t depthSmp = msToSamples(depthMs_);
+            const size_t total    = std::max<size_t>(baseSmp + depthSmp + 8, 256);
+            if (dBuffer_.size() != total) {
+                dBuffer_.assign(total, 0.0f);
+                writePos_ = 0;
+            }
+        } else if (param == "mix") {
+            mix_ = std::clamp(value, 0.0f, 1.0f);
+        } else if (param == "base_delay_ms") {
+            baseDelayMs_ = std::max(1, (int)std::lround(value));
+            const size_t baseSmp  = msToSamples(static_cast<float>(baseDelayMs_));
+            const size_t depthSmp = msToSamples(depthMs_);
+            const size_t total    = std::max<size_t>(baseSmp + depthSmp + 8, 256);
+            if (dBuffer_.size() != total) {
+                dBuffer_.assign(total, 0.0f);
+                writePos_ = 0;
+            }
+        }
     }
 };

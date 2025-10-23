@@ -32,23 +32,34 @@
 #include <algorithm>
 #include <memory>
 
-#include "vocal_effect.h"
+#include "audio_node.h"
 
 namespace PCore { 
-    class Flanger : public VocalEffect {
+    class Flanger : public AudioNode {
         private:
-            std::vector<float> dBuffer;
-            int writePos;
-            float lfoPhase;
-            float lfoRate;
-            float depth;
-            float feedback;
-            float mix;
+            int   sampleRate_ = 44100;
+            float lfoPhase_   = 0.0f;    // [rad]
+            float lfoRate_    = 0.25f;   // Hz (rate)
+            float depthSec_   = 0.0025f; // depth in secons (depth) ~2.5ms
+            float feedback_   = 0.25f;   // 0..0.95
+            float mix_        = 0.35f;   // 0..1
+            float baseDelaySec_ = 0.001f; // delay base ~1 ms
+
+            // Estado
+            std::vector<float> dBuffer_; // buffer
+            size_t writePos_ = 0;
+
+            // Helper
+            inline size_t secToSamples(float sec) const {
+                return static_cast<size_t>(std::max(1, (int)std::lround(sec * sampleRate_)));
+            }
 
         public:
-            Flanger(int sampleRate);
-            void process(std::vector<float> &buffer, int sampleRate);
+            explicit Flanger(int sampleRate);
+            void prepare(int sr, int block, int inCh, int outCh) override;
+            void process(const float* const* in, float* const* out, unsigned long frames) override;
             void setParameters(const std::string &param, float value);
+
     };
 }
 
