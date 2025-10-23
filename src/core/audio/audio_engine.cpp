@@ -23,9 +23,14 @@
 
 */
 
+#if 0
 #include <portaudio.h>
-#include <iostream>
+#endif
+
+#include <algorithm>
+#include <chrono>
 #include <cstring>
+#include <memory>
 
 #include "audio_engine.h"
 #include "effects/delay.h"
@@ -37,45 +42,19 @@
 #define AUDIO_ENGINE_DEBUG 0
 
 namespace PCore {
-    AudioEngine::AudioEngine(int sr) : sampleRate(sr) {
-        effects.push_back(std::make_unique<PCore::Delay>(sr));
-        effects.push_back(std::make_unique<PCore::Chorus>(sr));
-        effects.push_back(std::make_unique<PCore::Flanger>(sr));
-        effects.push_back(std::make_unique<PCore::Reverb>(sr));
-        effects.push_back(std::make_unique<PCore::PitchShifter>(sr));
+    AudioEngine::AudioEngine(int sr, int block, int inCh, int outCh) : sampleRate_(sr), blockSize_(block), inChans_(inCh), outChans_(outCh), ringIn_( 1024) , ringOut_(1024) {
+        engineInBuf_.resize(static_cast<size_t>(blockSize_) * std::max(1, inChans_));
+        engineOutBuf_.resize(static_cast<size_t>(blockSize_) * std::max(1, outChans_));
+        inPtrs_.resize(std::max(1, inChans_), nullptr);
+        outPtrs_.resize(std::max(1, outChans_), nullptr);
+
+        auto g = std::make_unique<AudioGraph>();
+        g->addNode(std::make_unique<Delay>(sampleRate_));
+        g->addNode(std::make_unique<Chorus>(sampleRate_));
+        g->addNode(std::make_unique<Flanger>(sampleRate_));
+        g->addNode(std::make_unique<Reverb>(sampleRate_));
+        g->addNode(std::make_unique<PitchShifter>(sampleRate_));
+        g->prepare(sampleRate_, blockSize_, inChans_, outChans_);
+        graph_ = std::move(g);
     }
-    
-    void AudioEngine::processAudio(std::vector<float> &buffer, int sampleRate) {
-        for (auto &effect : effects) {
-            effect->process(buffer, sampleRate);
-        }
-    }
-
-    void AudioEngine::setEffectParameters(size_t effectIndex, const std::string &param, float value) {
-        if (effectIndex < effects.size()) {
-            effects[effectIndex]->setParameters(param, value);
-        }
-    }
-
-    int AudioEngine::audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData) {
-        AudioEngine *engine = static_cast<AudioEngine *>(userData);
-
-        if (!engine) return paAbort;
-
-        const float *in = static_cast<const float*>(input);
-        float *out = static_cast<float*>(output);
-
-        std::vector<float> buffer(frameCount);
-        if (in) {
-            std::copy(in, in + frameCount, buffer.begin());
-        } else {
-            std::fill(buffer.begin(), buffer.end(), 0.0f);
-        }
-
-        engine->processAudio(buffer, engine->sampleRate);
-
-        std::copy(buffer.begin(), buffer.end(), out);
-
-        return paContinue;
-    } 
 }

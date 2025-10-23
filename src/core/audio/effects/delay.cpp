@@ -32,28 +32,47 @@
 #include "delay.h"
 
 namespace PCore {
-    Delay::Delay(int sampleRate) : writePos(0), feedback(0.5f), mix(0.3f) {
-        int maxDelay = sampleRate * 2; // 2 seconds max delay
-        dBuffer.resize(maxDelay, 0.0f);
-        dTime = sampleRate * 0.375f; // 375ms default
+    Delay::Delay(int sampleRate) : sampleRate_(sampleRate) {}
+
+    void Delay::prepare(int sr, int block, int inCh, int outCh) {
+        sampleRate_ = sr;
+        size_t delaySamples = static_cast<size_t>(std::max(1, (int)std::lround(dTimeMs_ * 0.001 * sampleRate_)));
+        dBuffer_.assign(delaySamples, 0.0f);
+        writePos_ = 0;
     }
 
-    void Delay::process(std::vector<float> &buffer, int sampleRate) {
-        for (size_t i = 0; i < buffer.size(); i++) {
-            float input = buffer[i];
-            int readPos = (writePos - dTime + dBuffer.size()) % dBuffer.size();
-            float delayed = dBuffer[readPos];
+    void Delay::process(const float* const* in, float* const* out, unsigned long frames) {
+        if (!out || !out[0]) return;
 
-            dBuffer[writePos] = input + delayed * feedback;
-            writePos = (writePos + 1) % dBuffer.size();
+        const float* x = (in && in[0]) ? in[0] : nullptr;
+        float* y = out[0];
 
-            buffer[i] = input * (1.0f - mix) + delayed * mix;
+        if (!x) { std::fill_n(y, frames, 0.0f); return; }
+
+        const size_t delayLen = dBuffer_.size();
+        if (delayLen == 0) { std::copy(x, x + frames, y); return; }
+
+        size_t wp = static_cast<size_t>(writePos_);
+        for (unsigned long i = 0; i < frames; ++i) {
+            float d = dBuffer_[wp];
+            float v = x[i] + feedback_ * d;        // feedback
+            dBuffer_[wp] = v;
+            y[i] = (1.0f - mix_) * x[i] + mix_ * d; // mix signal dry + signal wet
+            wp = (wp + 1) % delayLen;
         }
+        writePos_ = static_cast<int>(wp);
     }
 
-    void Delay::setParameters(const std::string &param, float value) {
-        if (param == "time") dTime = static_cast<int>(value);
-        if (param == "feedback") feedback = std::clamp(value, 0.0f, 0.95f);
-        if (param == "mix") mix = std::clamp(value, 0.0f, 1.0f);
+    void Delay::setParameters(const std::string& param, float value) {
+        if (param == "time_ms") {
+            dTimeMs_ = std::max(1, (int)std::lround(value));
+            size_t delaySamples = static_cast<size_t>(std::max(1, (int)std::lround(dTimeMs_ * 0.001 * sampleRate_)));
+            dBuffer_.assign(delaySamples, 0.0f);
+            writePos_ = 0;
+        } else if (param == "feedback") {
+            feedback_ = std::clamp(value, 0.0f, 0.95f);
+        } else if (param == "mix") {
+            mix_ = std::clamp(value, 0.0f, 1.0f);
+        }
     }
 };

@@ -32,7 +32,7 @@
 
 #include "rt/ring_buffer.h"
 #include "rt/audio_block.h"
-#include "audio_driver.h"
+#include "io/audio_driver.h"
 #include "audio_graph.h"
 
 namespace PCore {

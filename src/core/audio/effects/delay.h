@@ -31,22 +31,26 @@
 #include <algorithm>
 #include <memory>
 
-#include "vocal_effect.h"
+#include "audio/audio_node.h"
 
 
 namespace PCore {
-    class Delay : public VocalEffect {
+    class Delay : public AudioNode {
         private:
-            std::vector<float> dBuffer;
-            int dTime;
-            int writePos;
-            float feedback;
-            float mix;
+            std::vector<float> dBuffer_;
+            int sampleRate_ = 44100;
+            int dTimeMs_ = 250;  //ms
+            int writePos_ = 0;
+            float feedback_ = 0.35f;
+            float mix_ = 0.3f;
+
+            std::vector<float> dBuffer_;
             
         public:
-            Delay(int sampleRate);
-            void process(std::vector<float> &buffer, int sampleRate);
-            void setParameters(const std::string &param, float value);
+            explicit Delay(int sampleRate);
+            void prepare(int sr, int block, int inCh, int outCh) override;
+            void process(const float* const* in, float* const* out, unsigned long frames) override;
+            void setParameters(const std::string& param, float value);
     };
 }
 
