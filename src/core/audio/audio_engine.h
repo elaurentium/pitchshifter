@@ -26,23 +26,52 @@
 #ifndef AUDIO_ENGINE_H
 #define AUDIO_ENGINE_H
 
-#include <portaudio.h>
-
+#include <thread>
+#include <atomic>
 #include <vector>
-#include <memory>
 
-#include "effects/vocal_effect.h"
+#include "rt/ring_buffer.h"
+#include "rt/audio_block.h"
+#include "audio_driver.h"
+#include "audio_graph.h"
 
 namespace PCore {
     class AudioEngine {
         private:
-            std::vector<std::unique_ptr<VocalEffect>> effects;
-            int sampleRate;
+            void engineThreadMain();
+
+            int sampleRate_, blockSize_, inChans_, outChans_;
+            std::atomic<bool> running_{false};
+            std::thread engineThread_;
+            SpscRing<AudioBlock> ringIn_;
+            SpscRing<std::vector<float>> ringOut_; // contains interleaved or deinterleaved frames ready
+            std::unique_ptr<AudioGraph> graph_;
+
+            // Work buffers (preallocated)
+            std::vector<float> engineInBuf_;
+            std::vector<float> engineOutBuf_;
+            std::vector<const float*> inPtrs_;
+            std::vector<float*> outPtrs_;
+
+            std::atomic<uint64_t> xruns_{0};
+            std::atomic<double> cpuLoad_{0.0};
+            uint64_t frameCounter_ = 0;
         public:
-            AudioEngine(int sr = 44100);
-            void processAudio(std::vector<float> &buffer, int sampleRate);
-            void setEffectParameters(size_t effectIndex, const std::string &param, float value);
-            static int audioCallBack(const void *input, void *output, unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
+            explicit AudioEngine(int sampleRate, int blockSize, int inChans, int outChans);
+            ~AudioEngine();
+           // Called by driver RT callback (hard-RT safe)
+            static IO::CallbackResult driverCallback(const float* const* in, float* const* out, unsigned long frames, void* userData);
+
+            // Engine control
+            void start();
+            void stop();
+
+            // Graph management
+            void setGraph(std::unique_ptr<AudioGraph> g);
+
+            // Diagnostics
+            double cpuLoad() const { return cpuLoad_; }
+            uint64_t xruns() const { return xruns_.load(std::memory_order_relaxed); }
     };
 };
 

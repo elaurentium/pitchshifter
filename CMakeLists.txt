@@ -18,6 +18,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 ## Path to source-code
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(CORE_DIR ${SRC_DIR}/core)
@@ -42,10 +44,12 @@ if(NOT GIT_REVISION)
     set(GIT_REVISION "unknown")
 endif()
 
+option(ENABLE_QT "Enable Qt Core dependency" ON)
+option(ENABLE_PORTAUDIO "Enable PortAudio backend" ON)
+
 set(MAX_BUFFER_SIZE 4096)
 set(MAX_FX 16)
-
-set(HAVE_PORTAUDIO 1)
+set(HAVE_PORTAUDIO 0)
 
 configure_file(
     ${CORE_DIR}/config.h.in

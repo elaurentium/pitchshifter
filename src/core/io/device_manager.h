@@ -23,23 +23,28 @@
 
 */
 
-#ifndef AUDIO_OUTPUT
-#define AUDIO_OUTPUT
+#include "audio_driver.h"
+#include <memory>
+#include <string>
 
-#include "core/config.h"
-#include "core/object.h"
 
-namespace PCore {
-    typedef int (*audioProcessCallBack) (uint32_t, void *);
-
-    class AudioOutput : public PCore::Object<AudioOutput> {
+namespace IO {
+    class DeviceManager {
         public:
-            AudioOutput() = default;
-            virtual ~AudioOutput() { }
+            struct Policy {
+                std::vector<IO::HostApi> apiPreference = {
+                IO::HostApi::CoreAudio, IO::HostApi::PulseAudio, IO::HostApi::JACK, IO::HostApi::ALSA, IO::HostApi::WASAPI
+            };
+            bool preferSameApiForInOut = true;
+            };
 
-            virtual int init(unsigned nBufferSize) = 0;
+            DeviceManager(std::unique_ptr<IO::AudioDriver> driver, Policy p = {});
+            bool pickBest(IO::StreamConfig& cfg, std::string* report);
+            bool loadConfig(IO::StreamConfig& cfg, const std::string& path, std::string* err);
+            bool saveConfig(const IO::StreamConfig& cfg, const std::string& path, std::string* err);
+
+        private:
+            std::unique_ptr<IO::AudioDriver> driver_;
+            Policy policy_;
     };
-};
-
-
-#endif // AUDIO_OUTPUT
+}

@@ -23,16 +23,24 @@
 
 */
 
-#ifndef ALSA_AUDIO_DRIVER_H
-#define ALSA_AUDIO_DRIVER_H
-
-
-#include <inttypes.h>
-
+#include "audio_node.h"
+#include <memory>
+#include <vector>
 
 namespace PCore {
+    class AudioGraph {
+        public:
+            void addNode(std::unique_ptr<AudioNode> node);
+            void clear();
+            void prepare(int sampleRate, int maxBlock, int inChans, int outChans);
+            void process(const float* const* in, float* const* out, unsigned long frames);
 
-};
+        private:
+            std::vector<std::unique_ptr<AudioNode>> nodes_;
+            // Preallocated intermediate buffers
+            std::vector<std::vector<float>> interleaves_;
+            std::vector<float*> interPtrsIn_;
+            std::vector<float*> interPtrsOut_;
 
-
-#endif // ALSA_AUDIO_DRIVER_H
+    };
+}

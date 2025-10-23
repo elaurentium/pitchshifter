@@ -28,217 +28,69 @@
 #include <string>
 
 #include "core/audio/audio_engine.h"
+#include "io/device_manager.h"
+#include "io/port_audio_driver.h"
 
-extern "C" {
-    #include "core/logger.h"
+extern "C" { 
+    #include "core/logger.h" 
 }
 
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 2048
-
-// Helper function to open stream with automatic fallback
-static PaError openStreamWithFallback(PaStream **stream, PCore::AudioEngine *engine, Logger *logger) {
-    // 1) Try to open default stream first
-    PaError err = Pa_OpenDefaultStream(
-        stream,
-        1, 1,                           // 1 input channel, 1 output channel
-        paFloat32,
-        SAMPLE_RATE,
-        FRAMES_PER_BUFFER,
-        &PCore::AudioEngine::audioCallBack,
-        engine
-    );
-
-    if (err == paNoError) {
-        logger_log(logger, Info, "Main", "openStreamWithFallback", 
-                   "Default stream opened successfully.");
-        return paNoError;
-    }
-
-    // 2) If failed, log and try fallback
-    char msg[512];
-    snprintf(msg, sizeof(msg), 
-             "Default stream failed: %s. Trying specific devices...", 
-             Pa_GetErrorText(err));
-    logger_log(logger, Warning, "Main", "openStreamWithFallback", msg);
-
-    // 3) List all available devices
-    int numDevices = Pa_GetDeviceCount();
-    if (numDevices < 0) {
-        snprintf(msg, sizeof(msg), "Error counting devices: %s", Pa_GetErrorText(numDevices));
-        logger_log(logger, Error, "Main", "openStreamWithFallback", msg);
-        return numDevices;
-    }
-
-    if (numDevices == 0) {
-        logger_log(logger, Error, "Main", "openStreamWithFallback", 
-                   "No audio devices found!");
-        return paDeviceUnavailable;
-    }
-
-    logger_log(logger, Info, "Main", "openStreamWithFallback", 
-               "Enumerating PortAudio devices...");
-
-    int inputDev = paNoDevice;
-    int outputDev = paNoDevice;
-    int pulseInputDev = paNoDevice;
-    int pulseOutputDev = paNoDevice;
-
-    // List and find valid devices
-    for (int i = 0; i < numDevices; ++i) {
-        const PaDeviceInfo* devInfo = Pa_GetDeviceInfo(i);
-        const PaHostApiInfo* apiInfo = Pa_GetHostApiInfo(devInfo->hostApi);
-        
-        snprintf(msg, sizeof(msg),
-                 "  [%d] %s | API: %s | In: %d | Out: %d",
-                 i, 
-                 devInfo->name, 
-                 apiInfo ? apiInfo->name : "unknown",
-                 devInfo->maxInputChannels, 
-                 devInfo->maxOutputChannels);
-        logger_log(logger, Info, "Main", "openStreamWithFallback", msg);
-
-        // Select first device with input
-        if (devInfo->maxInputChannels > 0 && inputDev == paNoDevice) {
-            inputDev = i;
-        }
-        // Select first device with output
-        if (devInfo->maxOutputChannels > 0 && outputDev == paNoDevice) {
-            outputDev = i;
-        }
-    }
-
-    // 4) Check if valid devices were found
-    if (inputDev == paNoDevice || outputDev == paNoDevice) {
-        logger_log(logger, Error, "Main", "openStreamWithFallback",
-                   "No suitable input/output devices found.");
-        return paDeviceUnavailable;
-    }
-
-    // 5) Configure stream parameters
-    const PaDeviceInfo* inInfo = Pa_GetDeviceInfo(inputDev);
-    const PaDeviceInfo* outInfo = Pa_GetDeviceInfo(outputDev);
-
-    PaStreamParameters inputParams;
-    inputParams.device = inputDev;
-    inputParams.channelCount = 1;
-    inputParams.sampleFormat = paFloat32;
-    inputParams.suggestedLatency = inInfo->defaultHighInputLatency;
-    inputParams.hostApiSpecificStreamInfo = nullptr;
-
-    PaStreamParameters outputParams;
-    outputParams.device = outputDev;
-    outputParams.channelCount = 1;
-    outputParams.sampleFormat = paFloat32;
-    outputParams.suggestedLatency = outInfo->defaultHighOutputLatency;
-    outputParams.hostApiSpecificStreamInfo = nullptr;
-
-    snprintf(msg, sizeof(msg),
-             "Trying: Input='%s' (API: %s), Output='%s' (API: %s)",
-             inInfo->name, 
-             Pa_GetHostApiInfo(inInfo->hostApi)->name,
-             outInfo->name, 
-             Pa_GetHostApiInfo(outInfo->hostApi)->name);
-    logger_log(logger, Info, "Main", "openStreamWithFallback", msg);
-
-    // 6) Open stream with specific devices
-    err = Pa_OpenStream(
-        stream,
-        &inputParams,
-        &outputParams,
-        SAMPLE_RATE,
-        FRAMES_PER_BUFFER,
-        paClipOff,
-        &PCore::AudioEngine::audioCallBack,
-        engine
-    );
-
-    if (err != paNoError) {
-        snprintf(msg, sizeof(msg), "Pa_OpenStream failed: %s", Pa_GetErrorText(err));
-        logger_log(logger, Error, "Main", "openStreamWithFallback", msg);
-        return err;
-    }
-
-    logger_log(logger, Info, "Main", "openStreamWithFallback", 
-               "Stream opened with specific devices successfully.");
-    return paNoError;
-}
 
 int main() {
     // Initialize logger
     Logger* logger = logger_create("pitchshifter.log", true, true, true);
     logger_set_bitmask(Error | Warning | Info | Debug);
 
-    logger_log(logger, Info, "Main", "main", "Starting PitchShifter...");
+    IO::StreamConfig cfg;
+    cfg.sampleRate = 48000;
+    cfg.framesPerBlock = 512;
+    cfg.inputChannels = 1;
+    cfg.outputChannels = 2;
 
-    // Initialize PortAudio
-    PaError err = Pa_Initialize();
-    if (err != paNoError) {
-        char msg[256];
-        snprintf(msg, sizeof(msg), "Error initializing PortAudio: %s", Pa_GetErrorText(err));
-        logger_log(logger, Error, "Main", "main", msg);
-        logger_destroy(logger);
+    std::unique_ptr<IO::AudioDriver> driver = std::make_unique<IO::PortAudioDriver>();
+    IO::DeviceManager dm(std::move(driver));
+    std::string rep;
+    dm.pickBest(cfg, &rep);
+    logger_log(logger, Info, "Main", "DevicePick", rep.c_str());
+
+    // Re-obtain the driver from DeviceManager if it is held.
+    std::unique_ptr<IO::AudioDriver> drv = std::make_unique<IO::PortAudioDriver>();
+    PCore::AudioEngine engine(cfg.sampleRate, cfg.framesPerBlock, cfg.inputChannels, cfg.outputChannels);
+
+    auto cb = &PCore::AudioEngine::driverCallback;
+    std::string err;
+    if (!drv->initialize(cfg, cb, &engine, &err)) {
+        logger_log(logger, Error, "Main", "Init", err.c_str());
+        return -1;
+    }
+    if (!drv->start(&err)) {
+        logger_log(logger, Error, "Main", "Start", err.c_str());
         return -1;
     }
 
-    logger_log(logger, Info, "Main", "main", "PortAudio initialized successfully.");
+    // Run until ENTER; periodically print metrics from a non-RT thread
+    logger_log(logger, Info, "Main", "Run", "Running. Press ENTER to stop.");
+    std::atomic<bool> run{true};
+    std::thread mon([&]{
+        while (run.load()) {
+            char buf[256];
+            snprintf(buf, sizeof(buf), "CPU=%.2f%% XRuns=%llu LatIn=%.2fms LatOut=%.2fms",
+                     engine.cpuLoad() * 100.0,
+                     static_cast<unsigned long long>(engine.xruns()),
+                     drv->inputLatencySec()*1000.0, drv->outputLatencySec()*1000.0);
+            logger_log(logger, Info, "Main", "Metrics", buf);
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+        }
+    });
 
-    // Create audio engine
-    PCore::AudioEngine engine(SAMPLE_RATE);
-
-    // Configure effects
-    engine.setEffectParameters(0, "mix", 1.0f);
-    engine.setEffectParameters(1, "depth", 1.0f);
-
-    /****************************************************
-        PitchShifter
-    *****************************************************/
-	engine.setEffectParameters(2, "pitch", -1.0f);
-    engine.setEffectParameters(3, "formant", -2.0f);
-    engine.setEffectParameters(4, "mix", 0.7f);
-
-    logger_log(logger, Info, "Main", "main", "Effects configured successfully.");
-
-    // Open stream with automatic fallback
-    PaStream* stream = nullptr;
-    err = openStreamWithFallback(&stream, &engine, logger);
-    if (err != paNoError) {
-        char msg[256];
-        snprintf(msg, sizeof(msg), 
-                 "Failed to open stream after fallback: %s", 
-                 Pa_GetErrorText(err));
-        logger_log(logger, Error, "Main", "main", msg);
-        Pa_Terminate();
-        logger_destroy(logger);
-        return -1;
-    }
-
-    // Start stream
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        char msg[256];
-        snprintf(msg, sizeof(msg), "Error starting stream: %s", Pa_GetErrorText(err));
-        logger_log(logger, Error, "Main", "main", msg);
-        Pa_CloseStream(stream);
-        Pa_Terminate();
-        logger_destroy(logger);
-        return -1;
-    }
-
-    logger_log(logger, Info, "Main", "main", "Stream running! Speak into the microphone.");
-    std::cout << "\nProcessing audio in real-time...\n";
-    std::cout << "Press ENTER to exit.\n\n";
     std::cin.get();
+    run.store(false);
+    mon.join();
 
-    // Shutdown properly
-    logger_log(logger, Info, "Main", "main", "Shutting down...");
-    
-    Pa_StopStream(stream);
-    Pa_CloseStream(stream);
-    Pa_Terminate();
-
-    logger_log(logger, Info, "Main", "main", "Shutdown completed successfully.");
+    drv->stop();
+    drv->shutdown();
     logger_destroy(logger);
-
     return 0;
 }

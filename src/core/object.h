@@ -74,7 +74,7 @@ namespace PCore {
             // param flag the counting status to set
             static void set_count(bool flag);
             static bool count_active() { return __count; }
-            static int objects_count() { return __objects_count; }
+            static int objects_count() { return __object_count; }
 
             // output the full objects map to a given ostream
             // param out the ostream to write to

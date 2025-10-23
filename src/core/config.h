@@ -12,7 +12,7 @@
 #define DSPENGINE_VERSION_PATCH 0
 #define DSPENGINE_VERSION "1.0.0"
 
-#define DSPENGINE_GIT_REVISION "344efc1"
+#define DSPENGINE_GIT_REVISION "5018676"
 
 #define MAX_BUFFER_SIZE 4096
 #define MAX_FX 8
@@ -20,7 +20,7 @@
 /* #undef HAVE_LIBSNDFILE */
 /* #undef HAVE_RUBBERBAND */
 /* #undef HAVE_JACK */
-#define HAVE_PORTAUDIO
+/* #undef HAVE_PORTAUDIO */
 /* #undef HAVE_ALSA */
 
 #ifndef DSPENGINE_HAVE_DEBUG
