@@ -26,13 +26,11 @@
 #ifndef FLANGER_H
 #define FLANGER_H
 
-#include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <memory>
 
-#include "audio_node.h"
+#include "../audio_node.h"
 
 namespace PCore { 
     class Flanger : public AudioNode {

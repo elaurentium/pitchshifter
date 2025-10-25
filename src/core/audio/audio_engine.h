@@ -30,9 +30,9 @@
 #include <atomic>
 #include <vector>
 
-#include "rt/ring_buffer.h"
-#include "rt/audio_block.h"
-#include "io/audio_driver.h"
+#include "../rt/ring_buffer.h"
+#include "../rt/audio_block.h"
+#include "../io/audio_driver.h"
 #include "audio_graph.h"
 
 namespace PCore {

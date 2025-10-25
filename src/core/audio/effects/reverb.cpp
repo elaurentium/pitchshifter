@@ -23,36 +23,89 @@
 
 */
 
-#include <algorithm>
 
 #include "reverb.h"
+#include <cstddef>
 
 namespace PCore {
-    Reverb::Reverb(int sampleRate) : writePos(0), decay(0.5f), mix(0.3f) {
-        dLenght = sampleRate * 0.5f;
-        dBuffer.resize(dLenght * 4, 0.0f);
-    }
+    Reverb::Reverb(int sampleRate) : sampleRate_(sampleRate) {}
 
-    void Reverb::process(std::vector<float> &buffer, int sampleRate) {
-        for (size_t i = 0; i < buffer.size(); i++) {
-            float input = buffer[i];
+    void Reverb::prepare(int sr, int block, int inCh, int outCh) {
+		sampleRate_ = sr;
 
-            // Multiply delay taps for reverb effect
-            float delayd1 = dBuffer[(writePos - dLenght) & (dBuffer.size() - 1)];
-            float delayd2 = dBuffer[(writePos - dLenght * 2) & (dBuffer.size() - 1)];
-            float delayd3 = dBuffer[(writePos - dLenght * 3) & (dBuffer.size() - 1)];
+		// Buffer lenght was based on longest delay line (tap3) + margin
+		const size_t d1 = secToSamples(baseTime_);
+		const size_t d2 = secToSamples(baseTime_ * t2mul_);
+		const size_t d3 = secToSamples(baseTime_ * t3mul_);
+		const size_t maxDelay = std::max(d1, std::max(d2, d3));
 
-            float reverbSignal = (delayd1 + delayd2 * 0.7f + delayd3 * 0.5f) / 3.0f;
+		const size_t total = std::max<size_t>(maxDelay + 8, 1024);
+		dBuffer_.assign(total, 0.0f);
+		writePos_ = 0;
+	}
 
-            dBuffer[writePos] = input + reverbSignal * decay;
-            writePos = (writePos + 1) % dBuffer.size();
+	void Reverb::process(const float* const *in, float* const *out, unsigned long frames) {
+		if (!out || !out[0]) return;
 
-            buffer[i] = input * (1.0f - mix) + reverbSignal * mix;
-        }
-    }
+		const float* x = (in && in[0]) ? in[0] : nullptr;
+		float* y = out[0];
 
-    void Reverb::setParameters(const std::string &param, float value) {
-        if (param == "decay") decay = std::clamp(value, 0.0f, 0.99f);
-        if (param == "mix") mix = std::clamp(value, 0.0f, 1.0f);
-    }
+		if (!x) { std::fill_n(y, frames, 0.0f); return; }
+
+		const size_t N = dBuffer_.size();
+		if (N == 0) { std::copy(x, x + frames, y); return; }
+
+		const size_t d1 = secToSamples(baseTime_);
+		const size_t d2 = secToSamples(baseTime_ * t2mul_);
+		const size_t d3 = secToSamples(baseTime_ * t3mul_);
+
+		size_t wp = writePos_;
+
+		// Mask to wrap fast when N be potency of 2; if not, using %N
+		const bool pow2 = (N & (N - 1)) == 0;
+		auto wrap = [&](size_t idx) -> size_t {
+			return pow2 ? (idx & (N - 1)) : (idx % N);
+		};
+
+		for (unsigned long i = 0; i < frames; ++i) {
+			const float inS = x[i];
+
+			// Taps of delay
+			float dly1 = dBuffer_[wrap(wp + N - d1)];
+			float dly2 = dBuffer_[wrap(wp + N - d2)];
+			float dly3 = dBuffer_[wrap(wp + N - d3)];
+
+			// Balanced sum of taps (can adjust weights)
+			float rev = (dly1 + 0.7f * dly2 + 0.5f * dly3) / 3.0f;
+
+			// Global feedback simple (Tank)
+			dBuffer_[wp] = inS + decay_ * rev;
+
+			// Mix dry/wet
+			y[i] = (1.0f - mix_) * inS + mix_ * rev;
+
+			wp = (wp + 1) % N;
+		}
+
+		writePos_ = wp;
+	}
+
+	void Reverb::setParameters(const std::string& param, float value) {
+		if (param == "decay") {
+			decay_ = std::clamp(value, 0.0f, 0.99f);
+		} else if (param == "mix") {
+			mix_ = std::clamp(value, 0.0f, 1.0f);
+		} else if (param == "time_s") {
+			baseTime_ = std::clamp(value, 0.05f, 1.5f);
+			const size_t d1 = secToSamples(baseTime_);
+			const size_t d2 = secToSamples(baseTime_ * t2mul_);
+			const size_t d3 = secToSamples(baseTime_ * t3mul_);
+			const size_t maxDelay = std::max(d1, std::max(d2, d3));
+			const size_t total = std::max<size_t>(maxDelay + 8, 1024);
+			if (dBuffer_.size() != total) {
+				dBuffer_.assign(total, 0.0f);
+				writePos_ = 0;
+			}
+		}
+	}
 };

@@ -26,20 +26,37 @@
 #ifndef REVERB_H
 #define REVERB_H
 
-#include "vocal_effect.h"
+#include "../audio_node.h"
+
+#include <cstddef>
+#include <vector>
+#include <string>
 
 namespace PCore {
-    class Reverb : public VocalEffect {
+    class Reverb : public AudioNode {
         private:
-            std::vector<float> dBuffer;
-            int dLenght;
-            int writePos;
-            float decay;
-            float mix;
+		    //State
+            std::vector<float> dBuffer_;
+            size_t writePos_ = 0;
+            
+			// Params
+			int   sampleRate_ = 44100;
+			float decay_      = 0.5f;   // 0..0.99
+			float mix_        = 0.3f;   // 0..1
+			float baseTime_   = 0.35f;  // time base s (to tap 1)
+			// Relation between taps (on multi)
+			float t2mul_      = 2.0f;
+			float t3mul_      = 3.0f;
+
+			// Helpers
+			inline size_t secToSamples(float sec) const {
+				return static_cast<size_t>(std::max(1, (int)std::lround(sec * sampleRate_)));
+			}
 
         public:
-            Reverb(int sampleRate);
-            void process(std::vector<float> &buffer, int sampleRate);
+            explicit Reverb(int sampleRate);
+			void prepare(int sr, int block, int inCh, int outCh) override;
+            void process(const float* const* in, float* const* out, unsigned long frames) override;
             void setParameters(const std::string &param, float value);
     };
 }

@@ -23,7 +23,6 @@
 
 */
 
-#include <numeric>
 
 #include "chorus.h"
 

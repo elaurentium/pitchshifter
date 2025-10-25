@@ -23,12 +23,7 @@
 
 */
 
-#if 0
-#include <portaudio.h>
-#endif
-
 #include <algorithm>
-#include <chrono>
 #include <cstring>
 #include <memory>
 

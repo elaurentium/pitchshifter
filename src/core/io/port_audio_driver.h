@@ -27,7 +27,6 @@
 #define PORT_AUDIO_DRIVE
 
 #include "audio_driver.h"
-#include <atomic>
 #include <portaudio.h>
 
 namespace IO {
@@ -58,7 +57,12 @@ namespace IO {
                                 const PaStreamCallbackTimeInfo* timeInfo,
                                 PaStreamCallbackFlags statusFlags, void* userData);
 
+			// Internal helpers
+			static HostApi mapHostApi(PaHostApiTypeId id);
+
+		private:
             PaStream* stream_ = nullptr;
+			bool initialized_ = false;
             StreamConfig cfg_{};
             RtCallback cb_ = nullptr;
             void* userData_ = nullptr;

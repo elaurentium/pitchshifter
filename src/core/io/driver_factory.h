@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "functional"
 
 namespace IO {
     struct DriverDescriptor {

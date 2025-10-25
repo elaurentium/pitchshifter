@@ -23,6 +23,9 @@
 
 */
 
+#ifndef PCORE_AUDIO_GRAPH_H
+#define PCORE_AUDIO_GRAPH_H
+
 #include "audio_node.h"
 #include <memory>
 #include <vector>
@@ -44,3 +47,5 @@ namespace PCore {
 
     };
 }
+
+#endif // PCORE_AUDIO_GRAPH_H

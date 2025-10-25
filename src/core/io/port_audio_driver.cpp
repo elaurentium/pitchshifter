@@ -24,10 +24,26 @@
 */
 
 #include "port_audio_driver.h"
+#include "io/audio_driver.h"
 #include <cstring>
 
-namespace IO
-{
+namespace IO {
+	static IO::HostApi mapHostApiInternal(PaHostApiTypeId id) {
+		switch (id) {
+			case paALSA:      return IO::HostApi::ALSA;
+			case paCoreAudio: return IO::HostApi::CoreAudio;
+			case paJACK:      return IO::HostApi::JACK;
+			case paWASAPI:    return IO::HostApi::WASAPI;
+			case paASIO:      return IO::HostApi::ASIO;
+			case paOSS:       return IO::HostApi::OSS;
+			default:          return IO::HostApi::PortAudioMux;
+		}
+	}
+
+	IO::HostApi PortAudioDriver::mapHostApi(PaHostApiTypeId id) {
+		return mapHostApiInternal(id);
+	}
+
     PortAudioDriver::PortAudioDriver() {}
     PortAudioDriver::~PortAudioDriver() { shutdown(); }
 
@@ -36,17 +52,28 @@ namespace IO
         auto *self = static_cast<PortAudioDriver*>(userData);
         const float *in = static_cast<const float*>(input);
         float *out = static_cast<float*>(output);
-        if (self->callback_) {
-            return self->callback_(in, out, frames);
+
+		const float *inArr[1] = { in };
+		float *outArr[1] = { out };
+
+        if (self->cb_) {
+            CallbackResult result = self->cb_(inArr, outArr, frames, self->userData_);
+
+			switch (result) {
+				case CallbackResult::Continue: return paContinue;
+				case CallbackResult::Complete: return paComplete;
+				case CallbackResult::Abort:    return paAbort;
+			}
         }
 
-        if (out) std::memset(out, 0, frames * self->info_.outputChannels * sizeof(float));
+        if (out) std::memset(out, 0, frames * self->cfg_.outputChannels * sizeof(float));
         return paContinue;
     }
 
-    bool PortAudioDriver::initialize(const AudioStreamInfo &info, AudioCallback callback, std::string *err) {
-        info_ = info;
-        callback_ = std::move(callback);
+    bool PortAudioDriver::initialize(const StreamConfig &info, RtCallback callback, void *userData, std::string *err) {
+        cfg_ = info;
+        cb_ = callback;
+		userData_ = userData;
         PaError e = Pa_Initialize();
 
         if (e != paNoError) {
@@ -59,28 +86,28 @@ namespace IO
         const PaDeviceInfo* inInfo = nullptr; 
         const PaDeviceInfo* outInfo = nullptr;
 
-        if (info_.inputChannels > 0) {
+        if (cfg_.inputChannels > 0) {
             in.device = Pa_GetDefaultInputDevice();
             if (in.device == paNoDevice) { if (err) *err = "No default input device"; return false; }
             inInfo = Pa_GetDeviceInfo(in.device);
-            in.channelCount = info_.inputChannels;
+            in.channelCount = cfg_.inputChannels;
             in.sampleFormat = paFloat32;
             in.suggestedLatency = inInfo->defaultHighInputLatency;
         }
 
-        if (info_.outputChannels > 0) {
+        if (cfg_.outputChannels > 0) {
             out.device = Pa_GetDefaultOutputDevice();
             if (out.device == paNoDevice) { if (err) *err = "No default output device"; return false; }
             outInfo = Pa_GetDeviceInfo(out.device);
-            out.channelCount = info_.outputChannels;
+            out.channelCount = cfg_.outputChannels;
             out.sampleFormat = paFloat32;
             out.suggestedLatency = outInfo->defaultHighOutputLatency;
         }
 
         e = Pa_OpenStream(&stream_,
-                        info_.inputChannels ? &in : nullptr,
-                        info_.outputChannels ? &out : nullptr,
-                        info_.sampleRate, info_.framesPerBuffer, paClipOff,
+                        cfg_.inputChannels ? &in : nullptr,
+                        cfg_.outputChannels ? &out : nullptr,
+                        cfg_.sampleRate, static_cast<unsigned long>(cfg_.framesPerBlock), paClipOff,
                         &PortAudioDriver::paCallback, this);
         if (e != paNoError) {
             if (err) *err = Pa_GetErrorText(e);

@@ -23,6 +23,11 @@
 
 */
 
+#ifndef PCORE_AUDIO_NODE_H
+#define PCORE_AUDIO_NODE_H
+
+#include <cstddef>
+
 namespace PCore {
     class AudioNode {
         public:
@@ -31,3 +36,5 @@ namespace PCore {
             virtual void process(const float* const* in, float* const* out, unsigned long frames) = 0;
     };
 }
+
+#endif // PCORE_AUDIO_NODE_H

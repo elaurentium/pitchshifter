@@ -27,10 +27,8 @@
 #define AUDIO_DRIVER_H
 
 
-#include <functional>
 #include <string>
 #include <vector>
-#include <memory>
 
 
 namespace IO {

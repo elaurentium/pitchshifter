@@ -26,22 +26,47 @@
 #ifndef PITCHSHIFTER_H
 #define PITCHSHIFTER_H
 
-#include "vocal_effect.h"
+#include "../audio_node.h"
+
+#include <vector>
+#include <string>
 
 namespace PCore {
-    class PitchShifter : public VocalEffect {
+    class PitchShifter : public AudioNode {
         private:
-            std::vector<float> buffer1, buffer2, window;
-            int writePos, bufferSize;
-            float readPos1, readPos2;
-            float pitchRatio, crossfade;
-            float formantShift, mix;
+            // Parameters
+			int   sampleRate_   = 44100;
+			float pitchRatio_   = 1.0f;   // scalar ratio from semitones
+			float formantRatio_ = 1.0f;   // placeholder (not applied in this time-domain shifter)
+			float mix_          = 1.0f;   // 0..1 wet
+
+			// Windowed dual-buffer state
+			std::vector<float> buffer1_;
+			std::vector<float> buffer2_;
+			std::vector<float> window_;   // Hann
+			int    bufferSize_ = 0;       // in samples
+			int    writePos_   = 0;
+			float  readPos1_   = 0.0f;
+			float  readPos2_   = 0.0f;
+			float  crossfade_  = 0.0f;    // 0..2.0 cycles
+
+			// Helpers
+			void rebuildWindow();         // rebuild Hann window for current bufferSize_
+			inline float hannAt(int idx) const;
+
 
         public:
-            PitchShifter(int sampleRate);
-            void process(std::vector<float> &buffer, int sampleRate);
-            void setParameters(const std::string &param, float value);
-            float getLatency() const;
+            explicit PitchShifter(int sampleRate);
+
+			// AudioNode API
+			void prepare(int sr, int block, int inCh, int outCh) override;
+			void process(const float* const* in, float* const* out, unsigned long frames) override;
+
+			// Parameters (public API)
+			void setParameters(const std::string& param, float value);
+
+			// Latency in samples (useful for DAW compensation or alignment)
+			int latencySamples() const;
     };
 }
 

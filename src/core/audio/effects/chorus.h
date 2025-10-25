@@ -26,13 +26,11 @@
 #ifndef CHORUS_H
 #define CHORUS_H
 
-#include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <memory>
 
-#include "audio/audio_node.h"
+#include "../audio_node.h"
 
 namespace PCore {
     class Chorus : public AudioNode {

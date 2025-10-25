@@ -23,9 +23,15 @@
 
 */
 
-#ifndef NULL_DRIVER
-#define NULL_DRIVER
+#include "core/audio/audio_graph.h"
 
-
-
-#endif // NU_DRIVER
+namespace PCore {
+	bool PCore::AudioGraph::prepare(int sampleRate, int framesPerBlock, int inCh, int onCh) {
+		sampleRate_ = sampleRate;
+		blockSize_ = framesPerBlock;
+		inChannels_ = inCh;
+		outChannels_ = outCh;
+		// allocate temp buffers, validate nodes, etc. (stub)
+		return true;
+	}
+}

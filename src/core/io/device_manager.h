@@ -32,13 +32,18 @@ namespace IO {
     class DeviceManager {
         public:
             struct Policy {
-                std::vector<IO::HostApi> apiPreference = {
-                IO::HostApi::CoreAudio, IO::HostApi::PulseAudio, IO::HostApi::JACK, IO::HostApi::ALSA, IO::HostApi::WASAPI
-            };
-            bool preferSameApiForInOut = true;
+                std::vector<IO::HostApi> apiPreference;
+            	bool preferSameApiForInOut = true;
+				Policy() : apiPreference{
+					IO::HostApi::CoreAudio,
+					IO::HostApi::PulseAudio,
+					IO::HostApi::JACK,
+					IO::HostApi::ALSA,
+					IO::HostApi::WASAPI
+				}, preferSameApiForInOut(true) {}
             };
 
-            DeviceManager(std::unique_ptr<IO::AudioDriver> driver, Policy p = {});
+            explicit DeviceManager(std::unique_ptr<IO::AudioDriver> driver, Policy p = Policy()) : driver_(std::move(driver)), policy_(std::move(p)) {};
             bool pickBest(IO::StreamConfig& cfg, std::string* report);
             bool loadConfig(IO::StreamConfig& cfg, const std::string& path, std::string* err);
             bool saveConfig(const IO::StreamConfig& cfg, const std::string& path, std::string* err);

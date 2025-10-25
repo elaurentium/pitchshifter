@@ -1,0 +1,15 @@
+If:
+  PathMatch: [".*"]
+CompileFlags:
+  Add: ["-std=c++20"]
+Index:
+  Background: true
+Diagnostics:
+  ClangTidy:
+    Checks: "-*,bugprone-*,modernize-*"
+  UnusedIncludes: Strict
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+Style:
+  File: .clang-format

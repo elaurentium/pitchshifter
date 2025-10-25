@@ -27,11 +27,8 @@
 #define DELAY_H
 
 #include <vector>
-#include <cmath>
-#include <algorithm>
-#include <memory>
 
-#include "audio/audio_node.h"
+#include "../audio_node.h"
 
 
 namespace PCore {
