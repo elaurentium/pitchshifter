@@ -5,6 +5,8 @@ add_subdirectory(logger)
 file(GLOB_RECURSE CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/effects/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.c
 )
 
 ## Includes public headers

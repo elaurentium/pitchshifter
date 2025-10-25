@@ -23,15 +23,73 @@
 
 */
 
-#include "core/audio/audio_graph.h"
+#include "audio_graph.h"
 
 namespace PCore {
-	bool PCore::AudioGraph::prepare(int sampleRate, int framesPerBlock, int inCh, int onCh) {
-		sampleRate_ = sampleRate;
-		blockSize_ = framesPerBlock;
-		inChannels_ = inCh;
-		outChannels_ = outCh;
-		// allocate temp buffers, validate nodes, etc. (stub)
-		return true;
+	void AudioGraph::addNode(std::unique_ptr<AudioNode> node) {
+		nodes_.push_back(std::move(node));
 	}
+
+	void AudioGraph::clear() {
+		nodes_.clear();
+		interleaves_.clear();
+		interPtrsIn_.clear();
+		interPtrsOut_.clear();
+	}
+
+	void AudioGraph::prepare(int sampleRate, int maxBlock, int inCh, int onCh) {
+		for (auto &n : nodes_) {
+			n->prepare(sampleRate, maxBlock, inCh, onCh);
+		}
+
+		const int numCh = std::max(inCh, onCh);
+		interleaves_.assign(static_cast<size_t>(numCh), std::vector<float>(static_cast<size_t>(maxBlock), 0.0f));
+
+		interPtrsIn_.resize(static_cast<size_t>(numCh));
+		interPtrsOut_.resize(static_cast<size_t>(numCh));
+		for (int c = 0; c < numCh; ++c) {
+			interPtrsIn_[static_cast<size_t>(c)]  = interleaves_[static_cast<size_t>(c)].data();
+			interPtrsOut_[static_cast<size_t>(c)] = interleaves_[static_cast<size_t>(c)].data();
+		}
+	}
+
+	void AudioGraph::process(const float* const* in, float* const* out, unsigned long frames) {
+		const int numInter = static_cast<int>(interleaves_.size());
+
+		if (in && numInter > 0) {
+			for (int c = 0; c < numInter; ++c) {
+				const float* src = (in[c] != nullptr) ? in[c] : nullptr;
+				float* dst = interleaves_[static_cast<size_t>(c)].data();
+				if (src) {
+					std::memcpy(dst, src, static_cast<size_t>(frames) * sizeof(float));
+				} else {
+					std::memset(dst, 0, static_cast<size_t>(frames) * sizeof(float));
+				}
+			}
+		} else if (numInter > 0) {
+			for (int c = 0; c < numInter; ++c) {
+				std::memset(interleaves_[static_cast<size_t>(c)].data(), 0, static_cast<size_t>(frames) * sizeof(float));
+			}
+		}
+
+		const float* const* curIn = const_cast<const float* const*>(interPtrsIn_.data());
+		float* const* curOut = interPtrsOut_.data();
+
+		for (auto& n : nodes_) {
+			n->process(curIn, curOut, frames);
+			curIn = const_cast<const float* const*>(interPtrsIn_.data());
+			curOut = interPtrsOut_.data();
+		}
+
+		if (out) {
+			for (int c = 0; c < numInter; ++c) {
+				float* dst = out[c];
+				const float* src = interleaves_[static_cast<size_t>(c)].data();
+				if (dst) {
+					std::memcpy(dst, src, static_cast<size_t>(frames) * sizeof(float));
+				}
+			}
+		}
+	}
+
 }

@@ -23,8 +23,10 @@
 
 */
 
-#include "io/audio_driver.h"
-#include "io/device_manager.h"
+#include "audio_driver.h"
+#include "device_manager.h"
+
+#include <algorithm>
 #include <sstream>
 
 namespace IO {

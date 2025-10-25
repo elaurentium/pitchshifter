@@ -27,7 +27,6 @@
 #define PORT_AUDIO_DRIVE
 
 #include "audio_driver.h"
-#include <portaudio.h>
 
 namespace IO {
     class PortAudioDriver : public AudioDriver {
