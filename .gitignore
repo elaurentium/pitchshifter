@@ -43,6 +43,7 @@
 #hidden
 .vscode
 .cache
+src/core/config.h
 
 #build
 build
