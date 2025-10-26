@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include "pitchshifter.h"
+#include <algorithm>
 
 // TODO: learn how to performated pitchshifter works cuz sounds weird asf
 namespace PCore {

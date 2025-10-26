@@ -27,6 +27,7 @@
 #define DELAY_H
 
 #include <vector>
+#include <string>
 
 #include "../audio_node.h"
 

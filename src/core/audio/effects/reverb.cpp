@@ -26,6 +26,7 @@
 
 #include "reverb.h"
 #include <cstddef>
+#include <algorithm>
 
 namespace PCore {
     Reverb::Reverb(int sampleRate) : sampleRate_(sampleRate) {}

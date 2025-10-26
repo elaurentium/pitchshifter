@@ -24,6 +24,7 @@
 */
 
 #include "audio_graph.h"
+#include <cstring>
 
 namespace PCore {
 	void AudioGraph::addNode(std::unique_ptr<AudioNode> node) {

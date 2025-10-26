@@ -26,6 +26,7 @@
 #include "port_audio_driver.h"
 #include "audio_driver.h"
 #include <cstring>
+#include <portaudio.h>
 
 namespace IO {
 	static IO::HostApi mapHostApiInternal(PaHostApiTypeId id) {

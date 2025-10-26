@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <string>
 
 #include "flanger.h"
 

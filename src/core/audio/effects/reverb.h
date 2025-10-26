@@ -31,6 +31,7 @@
 #include <cstddef>
 #include <vector>
 #include <string>
+#include <cmath>
 
 namespace PCore {
     class Reverb : public AudioNode {
