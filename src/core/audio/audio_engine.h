@@ -29,6 +29,7 @@
 #include <thread>
 #include <atomic>
 #include <vector>
+#include <memory>
 
 #include "../rt/ring_buffer.h"
 #include "../rt/audio_block.h"

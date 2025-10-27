@@ -52,4 +52,75 @@ namespace PCore {
         g->prepare(sampleRate_, blockSize_, inChans_, outChans_);
         graph_ = std::move(g);
     }
+
+    AudioEngine::~AudioEngine() {
+        stop();
+    }
+
+    void AudioEngine::start() {
+        if (running_.exchange(true)) return;
+        engineThread_ = std::thread(&AudioEngine::engineThreadMain, this);
+    }
+
+    void AudioEngine::stop() {
+        if (!running_.exchange(false)) return;
+        if (engineThread_.joinable()) engineThread_.join();
+    }
+
+    void AudioEngine::setGraph(std::unique_ptr<AudioGraph> g) {
+        graph_ = std::move(g);
+
+        if (graph_) {
+            graph_->prepare(sampleRate_, blockSize_, inChans_, outChans_);
+        }
+    }
+
+    // Real-time callback called by the driver
+    IO::CallbackResult AudioEngine::driverCallback(const float* const *in, float* const *out, unsigned long frames, void *userData) {
+        auto *self = static_cast<AudioEngine*>(userData);
+
+        if (!self) {
+            // zero outputs if possible
+            if (out) {
+                for (int c = 0; c < (self ? self->outChans_ : 2); c++) {
+                    if (out[c]) std::memset(out[c], 0, frames * sizeof(float));
+                }
+            }
+            return IO::CallbackResult::Continue;
+        }
+
+        // Process directly via graph (simple model). If you use ring buffers, adapt accordingly.
+        if (self->graph_) {
+            self->graph_->process(in, out, frames);
+        } else {
+            // passthrough or zero
+            if (out && in) {
+                int chans = std::min(self->outChans_, self->inChans_);
+                for (int c = 0; c < chans; ++c) {
+                    if (out[c] && in[c]) {
+                        std::memcpy(out[c], in[c], frames * sizeof(float));
+                    } else if (out[c]) {
+                        std::memset(out[c], 0, frames * sizeof(float));
+                    }
+                }
+                for (int c = chans; c < self->outChans_; ++c) {
+                    if (out[c]) std::memset(out[c], 0, frames * sizeof(float));
+                }
+            } else if (out) {
+                for (int c = 0; c < self->outChans_; ++c) {
+                    if (out[c]) std::memset(out[c], 0, frames * sizeof(float));
+                }
+            }
+        }
+
+        return IO::CallbackResult::Continue;
+    }
+
+    void AudioEngine::engineThreadMain() {
+        // If you use ring buffers for non-RT processing, implement them here.
+        // For now, this thread can be idle or collect metrics.
+        while (running_.load(std::memory_order_relaxed)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
 }

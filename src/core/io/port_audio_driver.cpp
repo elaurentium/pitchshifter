@@ -26,7 +26,7 @@
 #include "port_audio_driver.h"
 #include "audio_driver.h"
 #include <cstring>
-#include <portaudio.h>
+//#include <portaudio.h>
 
 namespace IO {
 	static IO::HostApi mapHostApiInternal(PaHostApiTypeId id) {
@@ -82,7 +82,7 @@ namespace IO {
             return false;
         }
 
-        // Select default devices; you can add Hydrogen-style selection later
+        // Select default devices;
         PaStreamParameters in{}, out{};
         const PaDeviceInfo* inInfo = nullptr; 
         const PaDeviceInfo* outInfo = nullptr;
@@ -137,5 +137,64 @@ namespace IO {
         stop();
         Pa_Terminate();
         initialized_ = false;
+    }
+
+    std::vector<DeviceInfo> PortAudioDriver::listDevices() const {
+        std::vector<DeviceInfo> devices;
+
+        PaError pe = Pa_Initialize();
+        bool didInit = false;
+        if (pe == paNoError) didInit = true;
+
+        int count = Pa_GetDeviceCount();
+        if (count < 0) {
+            if (didInit) Pa_Terminate();
+            return devices;
+        }
+
+        devices.reserve(static_cast<size_t>(count));
+        for (int i = 0; i < count; ++i) {
+            const PaDeviceInfo* di = Pa_GetDeviceInfo(i);
+            if (!di) continue;
+
+            DeviceInfo d;
+            d.id = i;
+            d.name = di->name ? di->name : "Unknown";
+            d.maxInputChannels = di->maxInputChannels;
+            d.maxOutputChannels = di->maxOutputChannels;
+            d.defaultSampleRate = static_cast<int>(di->defaultSampleRate);
+
+            const PaHostApiInfo* hai = Pa_GetHostApiInfo(di->hostApi);
+            d.api = hai ? mapHostApi(hai->type) : HostApi::Unknown;
+
+            devices.push_back(std::move(d));
+        }
+
+        if (didInit) Pa_Terminate();
+        return devices;
+    }
+
+    int PortAudioDriver::defaultInputDeviceId() const {
+        PaError pe = Pa_Initialize();
+        bool didInit = false;
+        if (pe == paNoError) didInit = true;
+
+        PaDeviceIndex idx = Pa_GetDefaultInputDevice();
+        int out = (idx == paNoDevice) ? -1 : static_cast<int>(idx);
+
+        if (didInit) Pa_Terminate();
+        return out;
+    }
+
+    int PortAudioDriver::defaultOutputDeviceId() const {
+        PaError pe = Pa_Initialize();
+        bool didInit = false;
+        if (pe == paNoError) didInit = true;
+
+        PaDeviceIndex idx = Pa_GetDefaultOutputDevice();
+        int out = (idx == paNoDevice) ? -1 : static_cast<int>(idx);
+
+        if (didInit) Pa_Terminate();
+        return out;
     }
 }

@@ -33,6 +33,9 @@ extern "C" {
 #include <iomanip>
 #include <sstream>
 #include <typeinfo>
+#include <atomic>
+#include <map>
+#include <pthread.h>
 
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
@@ -129,4 +132,10 @@ namespace PCore {
 
         write_objects_map_to( std::cout, &mapDiff );
     }
+
+    bool Base::__count = false;                         // default: disabled
+    bool Base::bLogColors = true;                       // default: colors on
+    std::atomic<int> Base::__object_count{0};           // object count
+    object_internal_map_t Base::__objects_map{};        // map<const char*, const atomic_obj_cpt_t*>
+    pthread_mutex_t Base::__mutex = PTHREAD_MUTEX_INITIALIZER;
 };
