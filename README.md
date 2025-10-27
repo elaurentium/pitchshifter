@@ -9,7 +9,6 @@
 [![License: MIT](https://img.shields.io/github/license/elaurentium/pitchshifter?color=yellow)](https://github.com/elaurentium/pitchshifter/blob/main/LICENSE)
 [![Version](https://img.shields.io/github/v/release/elaurentium/pitchshifter?color=blue)](https://github.com/elaurentium/pitchshifter/releases)
 [![Platform](https://img.shields.io/badge/platforms-%20Linux%20|%20macOS-green.svg?color=lightgrey)](https://github.com/elaurentium/pitchshifter/releases)
-[![Build](https://img.shields.io/github/actions/workflow/status/elaurentium/pitchshifter/ci.yaml?branch=main)](https://github.com/elaurentium/pitchshifter/actions/workflows/ci.yaml)
 
 </div>
 
