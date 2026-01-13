@@ -3,9 +3,6 @@ INCLUDE=src/core/config.h
 all: build run
 
 run:
-	@if [ "$(shell uname)" == "Linux" ]; then \
-		pulseaudio --start; \
-	fi
 	./build/bin/PitchShifter
 
 build:

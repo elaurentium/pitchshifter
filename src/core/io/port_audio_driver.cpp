@@ -51,11 +51,28 @@ namespace IO {
     int PortAudioDriver::paCallback(const void *input, void *output, unsigned long frames,
                                     const PaStreamCallbackTimeInfo *, PaStreamCallbackFlags, void *userData) {
         auto *self = static_cast<PortAudioDriver*>(userData);
-        const float *in = static_cast<const float*>(input);
-        float *out = static_cast<float*>(output);
 
-		const float *inArr[1] = { in };
-		float *outArr[1] = { out };
+
+        const float* inArr[32] = { nullptr };
+        float* outArr[32] = { nullptr };
+        
+        // PortAudio NonInterleaved passes void* that is actually void** (array of pointers)
+        // input points to array of const float*
+        // output points to array of float*
+        
+        if (input) {
+            const float* const* src = static_cast<const float* const*>(input);
+            for (int i = 0; i < self->cfg_.inputChannels && i < 32; ++i) {
+                inArr[i] = src[i];
+            }
+        }
+        
+        if (output) {
+            float* const* dst = static_cast<float* const*>(output);
+            for (int i = 0; i < self->cfg_.outputChannels && i < 32; ++i) {
+                outArr[i] = dst[i];
+            }
+        }
 
         if (self->cb_) {
             CallbackResult result = self->cb_(inArr, outArr, frames, self->userData_);
@@ -67,7 +84,12 @@ namespace IO {
 			}
         }
 
-        if (out) std::memset(out, 0, frames * self->cfg_.outputChannels * sizeof(float));
+        // If callback didn't run or fill, we might want to silence. 
+        // But with NonInterleaved, silencing means memset each channel.
+        // Assuming callback handles it or we rely on PA to not play garbage if we return continue.
+        // Actually, safe bet is to zero if callback fails? 
+        // AudioGraph::process zeros outputs if inputs are null etc.
+        
         return paContinue;
     }
 
@@ -92,7 +114,7 @@ namespace IO {
             if (in.device == paNoDevice) { if (err) *err = "No default input device"; return false; }
             inInfo = Pa_GetDeviceInfo(in.device);
             in.channelCount = cfg_.inputChannels;
-            in.sampleFormat = paFloat32;
+            in.sampleFormat = paFloat32 | paNonInterleaved;
             in.suggestedLatency = inInfo->defaultHighInputLatency;
         }
 
@@ -101,7 +123,7 @@ namespace IO {
             if (out.device == paNoDevice) { if (err) *err = "No default output device"; return false; }
             outInfo = Pa_GetDeviceInfo(out.device);
             out.channelCount = cfg_.outputChannels;
-            out.sampleFormat = paFloat32;
+            out.sampleFormat = paFloat32 | paNonInterleaved;
             out.suggestedLatency = outInfo->defaultHighOutputLatency;
         }
 

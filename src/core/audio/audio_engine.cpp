@@ -33,6 +33,11 @@
 #include "effects/flanger.h"
 #include "effects/reverb.h"
 #include "effects/pitchshifter.h"
+#include "effects/compressor.h"
+#include "effects/noisegate.h"
+#include "effects/eq.h"
+#include "effects/phaser.h"
+#include "effects/tremolo.h"
 
 #define AUDIO_ENGINE_DEBUG 0
 
@@ -44,11 +49,17 @@ namespace PCore {
         outPtrs_.resize(std::max(1, outChans_), nullptr);
 
         auto g = std::make_unique<AudioGraph>();
-        g->addNode(std::make_unique<Delay>(sampleRate_));
+        // Suggested Order: Dynamics -> EQ -> Pitch -> Mod -> Delay -> Reverb
+        g->addNode(std::make_unique<NoiseGate>(sampleRate_));
+        g->addNode(std::make_unique<Compressor>(sampleRate_));
+        g->addNode(std::make_unique<Eq>(sampleRate_));
+        g->addNode(std::make_unique<PitchShifter>(sampleRate_));
+        g->addNode(std::make_unique<Phaser>(sampleRate_));
+        g->addNode(std::make_unique<Tremolo>(sampleRate_));
         g->addNode(std::make_unique<Chorus>(sampleRate_));
         g->addNode(std::make_unique<Flanger>(sampleRate_));
+        g->addNode(std::make_unique<Delay>(sampleRate_));
         g->addNode(std::make_unique<Reverb>(sampleRate_));
-        g->addNode(std::make_unique<PitchShifter>(sampleRate_));
         g->prepare(sampleRate_, blockSize_, inChans_, outChans_);
         graph_ = std::move(g);
     }

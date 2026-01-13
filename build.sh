@@ -26,7 +26,7 @@
 
 set -e
 
-mkdir build && cd build
+mkdir -p build && cd build
 cmake ..
 cmake --build . -j$(nproc)
 
